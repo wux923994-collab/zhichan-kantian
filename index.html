@@ -1,0 +1,2355 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>知产看天农业遥感智能分析软件 V1.0</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ccircle cx=%2750%27 cy=%2750%27 r=%2746%27 fill=%27%232563eb%27/%3E%3Cpath d=%27M50 18c14 6 22 16 22 30-2 18-12 30-22 34-10-4-20-16-22-34 0-14 8-24 22-30z%27 fill=%27%23ffffff%27/%3E%3Cpath d=%27M50 24v52M40 30c4 6 6 12 6 20M60 30c-4 6-6 12-6 20%27 stroke=%27%232563eb%27 stroke-width=%273%27 fill=%27none%27/%3E%3C/svg%3E">
+<script src="vendor/echarts.min.js"></script>
+<script>window.addEventListener("error", function(e){
+  if (e && e.target && e.target.tagName === "SCRIPT") {
+    var el = document.getElementById("offlineWarn");
+    if (el) el.style.display = "block";
+  }
+}, true);</script>
+<style>
+  :root {
+    --bg:#f4f6fa; --card:#ffffff; --line:#e6eaf0; --text:#1f2937; --muted:#6b7280;
+    --accent:#2563eb; --accent2:#7c3aed; --ok:#16a34a; --warn:#d97706; --err:#dc2626;
+    --shadow:0 1px 3px rgba(15,23,42,.06),0 1px 2px rgba(15,23,42,.04);
+    --shadow-lg:0 14px 36px rgba(15,23,42,.12);
+    --head-bg:rgba(255,255,255,.9);
+  }
+  [data-theme="dark"] {
+    --bg:#0b1220; --card:#111a2e; --line:#1e2a44; --text:#e5eaf3; --muted:#8b96ad;
+    --accent:#60a5fa; --accent2:#a78bfa; --ok:#34d399; --warn:#fbbf24; --err:#f87171;
+    --shadow:0 1px 3px rgba(0,0,0,.4); --shadow-lg:0 14px 36px rgba(0,0,0,.5);
+    --head-bg:rgba(17,26,46,.92);
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { background:var(--bg); color:var(--text); font-family:"Microsoft YaHei","PingFang SC",system-ui,sans-serif; line-height:1.6; transition:background .3s,color .3s; }
+  ::-webkit-scrollbar { width:8px; height:8px; }
+  ::-webkit-scrollbar-thumb { background:var(--line); border-radius:4px; }
+  header { position:sticky; top:0; z-index:50; background:var(--head-bg); backdrop-filter:blur(10px); border-bottom:1px solid var(--line); transition:background .3s; }
+  .nav { max-width:1320px; margin:0 auto; display:flex; align-items:center; gap:6px; padding:0 22px; height:60px; }
+  .brand { display:flex; align-items:center; gap:10px; margin-right:auto; }
+  .logo { width:34px; height:34px; border-radius:10px; background:linear-gradient(135deg,var(--accent),var(--accent2)); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:16px; box-shadow:var(--shadow); }
+  .brand b { font-size:15px; } .brand span { display:block; font-size:10.5px; color:var(--muted); font-weight:400; }
+  .tab { border:none; background:transparent; color:var(--muted); font-size:13.5px; padding:8px 12px; border-radius:8px; cursor:pointer; font-weight:500; transition:all .18s; }
+  .tab:hover { color:var(--text); background:var(--line); }
+  .tab.active { color:var(--accent); background:rgba(37,99,235,.1); font-weight:700; }
+  .hbtn { width:32px; height:32px; border:1px solid var(--line); background:var(--card); color:var(--muted); border-radius:8px; cursor:pointer; font-size:15px; display:flex; align-items:center; justify-content:center; transition:all .18s; margin-left:6px; }
+  .hbtn:hover { color:var(--accent); border-color:var(--accent); transform:translateY(-1px); }
+  .admin-link { margin-left:8px; font-size:12px; color:var(--muted); text-decoration:none; border:1px solid var(--line); padding:6px 10px; border-radius:8px; white-space:nowrap; display:flex; align-items:center; height:32px; box-sizing:border-box; }
+  .admin-link:hover { color:var(--accent); border-color:var(--accent); }
+  .user-chip { margin-left:8px; font-size:12px; color:var(--accent); max-width:120px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  #btnTheme { width:auto; padding:0 12px; font-size:12px; }
+  .clock { font-size:12px; color:var(--muted); margin-left:10px; font-variant-numeric:tabular-nums; }
+  .status { display:flex; align-items:center; gap:5px; font-size:11.5px; color:var(--muted); margin-left:8px; }
+  .dot { width:8px; height:8px; border-radius:50%; background:#d1d5db; }
+  .dot.on { background:var(--ok); box-shadow:0 0 0 3px rgba(22,163,74,.18); animation:pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+  main { max-width:1320px; margin:0 auto; padding:22px; }
+  .view { display:none; }
+  .view.active { display:block; animation:fadeUp .35s ease; }
+  @keyframes fadeUp { from{opacity:0; transform:translateY(12px)} to{opacity:1; transform:none} }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px 18px; margin-bottom:12px; box-shadow:var(--shadow); }
+  .card h2 { font-size:14px; font-weight:700; margin-bottom:10px; display:flex; align-items:center; gap:8px; }
+  .card h2 .ico { width:26px; height:26px; border-radius:8px; background:rgba(37,99,235,.1); color:var(--accent); display:inline-flex; align-items:center; justify-content:center; font-size:14px; }
+  .desc { font-size:12.5px; color:var(--muted); margin:-4px 0 12px; }
+  .kpis { display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:10px; margin-bottom:12px; }
+  .kpi { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:12px 14px; position:relative; overflow:hidden; }
+  .kpi .label { font-size:12px; color:var(--muted); }
+  .kpi .value { font-size:25px; font-weight:800; margin-top:4px; font-variant-numeric:tabular-nums; }
+  .kpi .unit { font-size:11.5px; color:var(--muted); font-weight:400; margin-left:4px; }
+  .kpi::after { content:""; position:absolute; right:-18px; top:-18px; width:74px; height:74px; border-radius:50%; background:var(--accent); opacity:.07; }
+  .kpi.g::after{background:var(--ok);} .kpi.o::after{background:var(--warn);} .kpi.p::after{background:var(--accent2);}
+  label { display:block; font-size:13px; margin:12px 0 4px; font-weight:600; }
+  input[type=file], input[type=text], select { width:100%; padding:8px 12px; border:1px solid var(--line); border-radius:9px; background:var(--card); color:var(--text); font-size:14px; }
+  input[type=file]::file-selector-button { border:1px solid var(--line); background:var(--line); border-radius:6px; padding:6px 12px; margin-right:10px; cursor:pointer; color:var(--text); }
+  .hint { font-size:12px; color:var(--muted); margin-top:6px; }
+  .chips { display:flex; flex-wrap:wrap; gap:8px; margin-top:6px; }
+  .chip { display:flex; flex-direction:column; align-items:flex-start; gap:2px; padding:8px 12px; border-radius:10px; border:1px solid var(--line); cursor:pointer; font-size:13px; user-select:none; color:var(--muted); background:var(--card); transition:all .15s; max-width:220px; }
+  .chip:hover { border-color:var(--accent); color:var(--accent); }
+  .chip.on { background:var(--accent); color:#fff; border-color:var(--accent); font-weight:600; }
+  .chip .nm { font-weight:600; }
+  .chip .sx { font-size:11px; font-weight:400; opacity:.8; line-height:1.35; }
+  .btn { display:inline-flex; align-items:center; gap:8px; background:var(--accent); color:#fff; border:none; border-radius:9px; padding:11px 26px; font-size:15px; font-weight:600; cursor:pointer; transition:all .18s; box-shadow:0 2px 10px rgba(37,99,235,.25); }
+  .btn:hover { transform:translateY(-2px); filter:brightness(1.06); }
+  .btn:disabled { opacity:.55; cursor:not-allowed; transform:none; }
+  .btn.ghost { background:var(--line); color:var(--text); box-shadow:none; }
+  .btn.sm { padding:7px 14px; font-size:13px; }
+  .progress-wrap { margin-top:14px; display:none; }
+  .progress-wrap.show { display:block; }
+  .progress-bar { height:10px; background:var(--line); border-radius:999px; overflow:hidden; }
+  .progress-fill { height:100%; width:0%; border-radius:999px; background:linear-gradient(90deg,var(--accent),var(--accent2)); transition:width .5s ease; position:relative; }
+  .progress-fill::after { content:""; position:absolute; inset:0; background:linear-gradient(90deg,transparent,rgba(255,255,255,.35),transparent); animation:shine 1.2s infinite; }
+  @keyframes shine { from{transform:translateX(-100%)} to{transform:translateX(100%)} }
+  .progress-text { font-size:13px; color:var(--muted); margin-top:8px; display:flex; justify-content:space-between; }
+  .stage-line { margin-top:10px; font-size:12.5px; color:var(--accent); min-height:18px; font-family:Consolas,monospace; }
+  .tbl-wrap { overflow-x:auto; }
+  table { width:100%; border-collapse:collapse; font-size:13px; }
+  th, td { padding:9px 11px; border-bottom:1px solid var(--line); text-align:left; white-space:nowrap; }
+  th { color:var(--muted); font-weight:600; background:var(--line); }
+  tbody tr { transition:background .12s; }
+  tbody tr:hover { background:rgba(37,99,235,.05); }
+  tr.best { background:rgba(22,163,74,.08); }
+  .badge { display:inline-block; background:rgba(22,163,74,.15); color:var(--ok); font-size:11px; font-weight:700; padding:2px 8px; border-radius:999px; margin-left:6px; }
+  .tag { display:inline-block; background:rgba(37,99,235,.1); color:var(--accent); font-size:11px; padding:2px 9px; border-radius:7px; margin:2px 3px 0 0; }
+  .chart { width:100%; height:330px; }
+  .legend-box { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:10px; margin-top:14px; }
+  .legend-item { background:var(--line); border-radius:9px; padding:10px 12px; font-size:12.5px; }
+  .legend-item b { display:block; } .legend-item span { color:var(--muted); font-size:12px; }
+  .carousel-card { background:var(--bg); border:1px solid var(--line); border-radius:10px; padding:10px 12px; }
+  .carousel-card.dim, .carousel-card.focus { opacity:1; transform:none; filter:none; box-shadow:none; }
+  .carousel-dots { display:none; }
+  .insight { background:var(--bg); border:1px solid var(--line); border-radius:8px; padding:8px 12px; font-size:13px; margin-top:8px; min-height:36px; }
+  .insight .ai { font-weight:700; color:var(--accent); margin-right:8px; }
+  .caret { display:inline-block; width:2px; height:14px; background:var(--accent); vertical-align:-2px; animation:blink .8s infinite; margin-left:2px; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+  .empty { text-align:center; color:var(--muted); padding:18px 12px; font-size:13px; }
+  .empty .big { font-size:38px; margin-bottom:8px; }
+  footer { color:var(--muted); font-size:12px; text-align:center; padding:22px; }
+  .modal { position:fixed; inset:0; z-index:400; background:rgba(15,23,42,.5); display:flex; align-items:center; justify-content:center; padding:20px; }
+  .modal-box { background:var(--card); border:1px solid var(--line); border-radius:14px; max-width:720px; width:100%; padding:18px 20px; box-shadow:var(--shadow-lg); }
+  .modal-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
+  .modal-head b { font-size:15px; }
+    .toast { position:fixed; top:74px; right:20px; z-index:200; background:var(--card); border:1px solid var(--line); border-left:4px solid var(--accent); border-radius:10px; padding:12px 18px; box-shadow:var(--shadow-lg); font-size:13px; opacity:0; transform:translateX(24px); transition:all .3s; }
+  .toast.show { opacity:1; transform:none; }
+  .toast.err { border-left-color:var(--err); } .toast.ok { border-left-color:var(--ok); }
+  /* ---------- 数据看板（亮色） ---------- */
+  .cockpit-wrap { display:none; position:fixed; inset:0; z-index:300; background:linear-gradient(135deg,#eef3fb 0%,#f8fafc 45%,#eef6ff 100%); color:#1f2937; overflow:auto; }
+  .cockpit-wrap.open { display:block; animation:fadeUp .4s ease; }
+  .cp-head { display:flex; align-items:center; gap:14px; padding:18px 28px; border-bottom:1px solid #e2e8f0; background:rgba(255,255,255,.85); backdrop-filter:blur(6px); position:sticky; top:0; z-index:2; }
+  .cp-title { font-size:20px; font-weight:800; letter-spacing:2px; background:linear-gradient(90deg,#2563eb,#7c3aed); -webkit-background-clip:text; background-clip:text; color:transparent; }
+  .cp-clock { margin-left:auto; font-size:28px; font-weight:800; font-variant-numeric:tabular-nums; letter-spacing:1px; color:#111827; }
+  .cp-date { font-size:12px; color:#6b7280; text-align:right; margin-top:2px; }
+  .cp-body { padding:22px 28px; }
+  .cp-kpis { display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:14px; margin-bottom:20px; }
+  .cp-kpi { background:#fff; border:1px solid #e2e8f0; border-radius:14px; padding:16px; position:relative; overflow:hidden; box-shadow:0 1px 3px rgba(15,23,42,.06); }
+  .cp-kpi .label { font-size:12px; color:#6b7280; }
+  .cp-kpi .value { font-size:26px; font-weight:800; margin-top:4px; color:#111827; }
+  .cp-kpi .unit { font-size:11px; color:#6b7280; }
+  .cp-kpi::before { content:""; position:absolute; left:0; top:0; bottom:0; width:3px; background:linear-gradient(#2563eb,#7c3aed); }
+  .cp-grid { display:grid; grid-template-columns:2fr 1fr; gap:16px; }
+  @media (max-width:1000px){ .cp-grid{grid-template-columns:1fr;} }
+  .cp-main { background:#fff; border:1px solid #e2e8f0; border-radius:16px; padding:16px; position:relative; min-height:460px; box-shadow:0 2px 8px rgba(15,23,42,.06); }
+  .cp-chart { position:absolute; inset:56px 16px 16px; opacity:0; transform:translateY(14px); transition:opacity .6s,transform .6s; pointer-events:none; }
+  .cp-chart.active { opacity:1; transform:none; pointer-events:auto; }
+  .cp-chart-title { position:absolute; top:14px; left:16px; font-size:14px; font-weight:700; color:#1f2937; }
+  .cp-dots { position:absolute; top:18px; right:16px; display:flex; gap:8px; }
+  .cp-dot { width:9px; height:9px; border-radius:50%; background:#cbd5e1; cursor:pointer; transition:all .3s; }
+  .cp-dot.on { background:#2563eb; transform:scale(1.35); box-shadow:0 0 0 3px rgba(37,99,235,.2); }
+  .cp-side { display:flex; flex-direction:column; gap:16px; }
+  .cp-panel { background:#fff; border:1px solid #e2e8f0; border-radius:16px; padding:16px; box-shadow:0 1px 3px rgba(15,23,42,.06); }
+  .cp-panel h3 { font-size:13px; color:#6b7280; margin-bottom:10px; font-weight:600; }
+  .cp-row { display:flex; justify-content:space-between; font-size:13px; padding:7px 0; border-bottom:1px dashed #e2e8f0; }
+  .cp-row:last-child { border:none; }
+  .cp-row b { color:#111827; }
+  .ticker { font-size:12px; color:#6b7280; line-height:2; max-height:130px; overflow:hidden; position:relative; }
+  .ticker .it { animation:slideIn .4s ease; }
+  .cp-exit { position:fixed; right:24px; bottom:24px; background:#fff; color:#1f2937; border:1px solid #d1d5db; padding:10px 20px; border-radius:999px; cursor:pointer; font-size:13px; z-index:301; box-shadow:0 2px 8px rgba(15,23,42,.12); }
+  .cp-exit:hover { background:#f3f4f6; }
+  .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:18px; }
+  @media (max-width:900px){ .grid2{grid-template-columns:1fr;} }
+
+  /* 首次引导 / 帮助弹层 */
+  .guide-mask{ position:fixed; inset:0; background:rgba(15,23,42,.46); z-index:600; display:none; align-items:center; justify-content:center; padding:20px; }
+  .guide-mask.open{ display:flex; }
+  .guide-box{ background:#fff; color:#1f2937; border-radius:18px; max-width:780px; width:100%; max-height:86vh; overflow:auto; padding:22px 28px; box-shadow:0 24px 70px rgba(15,23,42,.35); }
+  .guide-box h2{ font-size:19px; margin:0 0 4px; }
+  .guide-sub{ color:#6b7280; font-size:13px; margin-bottom:12px; }
+  .guide-step{ display:flex; gap:12px; padding:11px 0; border-bottom:1px dashed #e5e7eb; align-items:flex-start; }
+  .guide-step:last-child{ border-bottom:none; }
+  .guide-step .no{ flex:0 0 24px; height:24px; border-radius:50%; background:#2563eb; color:#fff; font-size:13px; font-weight:700; display:flex; align-items:center; justify-content:center; }
+  .guide-step b{ display:block; font-size:14px; margin-bottom:2px; }
+  .guide-step span{ color:#6b7280; font-size:13px; line-height:1.6; }
+  .guide-foot{ display:flex; justify-content:flex-end; gap:10px; margin-top:16px; }
+  .guide-tip{ font-size:12px; color:#9ca3af; }
+  .subnav { display:none; gap:8px; margin-bottom:16px; padding:8px; background:var(--card); border:1px solid var(--line); border-radius:12px; align-items:center; flex-wrap:wrap; }
+  .subnav.show { display:flex; }
+  .subnav .lab { font-size:12px; color:var(--muted); margin-right:4px; }
+  .stab { border:1px solid var(--line); background:transparent; color:var(--muted); font-size:13px; padding:6px 14px; border-radius:8px; cursor:pointer; }
+  .stab.on { background:var(--accent); color:#fff; border-color:var(--accent); font-weight:700; }
+  .track-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:18px; }
+  @media (max-width:900px){ .track-grid{grid-template-columns:1fr;} }
+  .track-card { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:18px 20px; box-shadow:var(--shadow); }
+  .track-card h3 { font-size:15px; margin-bottom:6px; display:flex; align-items:center; gap:8px; }
+  .badge-main, .track-card .badge-main { background:rgba(220,38,38,.12); color:#dc2626; font-size:11px; padding:2px 8px; border-radius:999px; font-weight:700; }
+  .badge-sub, .track-card .badge-sub { background:rgba(37,99,235,.12); color:var(--accent); font-size:11px; padding:2px 8px; border-radius:999px; font-weight:700; }
+  .route { display:flex; flex-wrap:wrap; gap:6px; margin-top:12px; align-items:center; }
+  .route span { background:rgba(37,99,235,.08); color:var(--accent); border-radius:8px; padding:5px 10px; font-size:12px; font-weight:600; }
+  .route i { color:var(--muted); font-style:normal; font-size:12px; }
+  .pipe { display:flex; flex-wrap:wrap; gap:8px; margin:10px 0 4px; }
+  .pipe span { background:rgba(220,38,38,.08); color:#b91c1c; border-radius:8px; padding:5px 10px; font-size:12px; font-weight:600; }
+  .after-action { display:none; }
+  .after-action.show { display:block; }
+
+  /* —— 工作台升级：分层顶栏、页面条、空态骨架 —— */
+  body { background-image:
+    radial-gradient(1200px 480px at 8% -10%, rgba(37,99,235,.08), transparent 55%),
+    radial-gradient(900px 420px at 100% 0%, rgba(124,58,237,.06), transparent 50%); }
+  [data-theme="dark"] body { background-image:
+    radial-gradient(1000px 400px at 0% 0%, rgba(96,165,250,.08), transparent 50%),
+    radial-gradient(800px 360px at 100% 0%, rgba(167,139,250,.06), transparent 50%); }
+  header { box-shadow:0 1px 0 var(--line); }
+  .topbar, .nav-row { max-width:1400px; margin:0 auto; padding:0 22px; }
+  .topbar { display:flex; align-items:center; height:56px; gap:12px; }
+  .nav-row { display:flex; align-items:center; gap:4px; height:46px; overflow-x:auto; }
+  .nav-row .tab { white-space:nowrap; }
+  .brand span { letter-spacing:.02em; }
+  .top-tools { display:flex; align-items:center; margin-left:auto; flex-shrink:0; }
+  .crumbbar { border-bottom:1px solid var(--line); background:rgba(255,255,255,.55); }
+  [data-theme="dark"] .crumbbar { background:rgba(17,26,46,.45); }
+  .crumb-inner { max-width:1400px; margin:0 auto; padding:10px 22px 12px; display:flex; justify-content:space-between; gap:16px; align-items:baseline; flex-wrap:wrap; }
+  .crumb-inner b { font-size:15px; }
+  .crumb-inner span { font-size:12px; color:var(--muted); }
+  main { max-width:1400px; }
+  .hero { display:grid; grid-template-columns:1.4fr .8fr; gap:18px; margin-bottom:18px; }
+  @media (max-width:900px){ .hero{grid-template-columns:1fr;} .nav{height:auto; flex-wrap:wrap; padding:8px 16px;} }
+  .hero-card { background:linear-gradient(135deg,rgba(37,99,235,.12),rgba(124,58,237,.08));
+    border:1px solid var(--line); border-radius:18px; padding:22px 24px; box-shadow:var(--shadow); }
+  .hero-kicker { font-size:11px; letter-spacing:.12em; color:var(--accent); font-weight:700; text-transform:uppercase; }
+  .hero-card h1 { font-size:26px; margin:6px 0 8px; letter-spacing:.02em; }
+  .hero-card p { color:var(--muted); font-size:13.5px; line-height:1.7; max-width:52em; }
+  .hero-actions { display:flex; gap:10px; flex-wrap:wrap; margin-top:14px; }
+  .hero-side { background:var(--card); border:1px solid var(--line); border-radius:18px; padding:18px 20px; box-shadow:var(--shadow); }
+  .hero-side .row { display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px dashed var(--line); font-size:13px; }
+  .hero-side .row:last-child { border:none; }
+  .hero-side .row b { color:var(--text); }
+  .pipe-board { display:grid; grid-template-columns:repeat(6,1fr); gap:8px; margin:0 0 18px; }
+  @media (max-width:1100px){ .pipe-board{grid-template-columns:repeat(3,1fr);} }
+  .pipe-step { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:12px 12px 10px; box-shadow:var(--shadow); }
+  .pipe-step .n { width:22px; height:22px; border-radius:50%; background:rgba(37,99,235,.12); color:var(--accent); font-size:12px; font-weight:800; display:flex; align-items:center; justify-content:center; }
+  .pipe-step b { display:block; font-size:13px; margin:8px 0 2px; }
+  .pipe-step span { font-size:11.5px; color:var(--muted); line-height:1.45; }
+  .chart { background:linear-gradient(180deg,rgba(37,99,235,.03),transparent 40%); border:1px dashed var(--line); border-radius:12px; }
+  input:focus, select:focus { outline:none; border-color:var(--accent); box-shadow:0 0 0 3px rgba(37,99,235,.14); }
+  .btn.ghost { border:1px solid var(--line); }
+  footer { border-top:1px solid var(--line); margin-top:8px; }
+  .foot-inner { max-width:1400px; margin:0 auto; padding:16px 22px 28px; display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; font-size:12px; color:var(--muted); }
+  .user-chip { background:rgba(37,99,235,.08); border:1px solid rgba(37,99,235,.18); border-radius:999px; padding:4px 10px; height:auto; }
+  .dock { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:12px; }
+  @media (max-width:800px){ .dock{grid-template-columns:1fr 1fr;} }
+  .dock-item { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:12px 14px; cursor:pointer; text-align:left; box-shadow:var(--shadow); transition:border-color .15s,transform .15s; }
+  .dock-item:hover { border-color:var(--accent); transform:translateY(-1px); }
+  .dock-item .k { font-size:11px; color:var(--muted); }
+  .dock-item .v { font-size:20px; font-weight:800; margin-top:2px; font-variant-numeric:tabular-nums; }
+  .dock-item .t { font-size:12px; color:var(--accent); margin-top:4px; font-weight:600; }
+  .plug-head { cursor:pointer; user-select:none; }
+  .card h2.plug-head { margin-bottom:0; }
+  .plug:not(.off) .plug-head { margin-bottom:10px; }
+  .plug-tog { margin-left:auto; border:1px solid var(--line); background:var(--bg); color:var(--muted); border-radius:6px; padding:2px 8px; font-size:11px; cursor:pointer; }
+  .plug.off .plug-body { display:none; }
+  .plug.off { padding-bottom:10px; }
+  .plug-bar { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px; align-items:center; }
+  .plug-bar .lab { font-size:12px; color:var(--muted); margin-right:2px; }
+  .plug-chip { border:1px solid var(--line); background:var(--card); color:var(--muted); border-radius:999px; padding:5px 12px; font-size:12px; cursor:pointer; }
+  .plug-chip.on { background:rgba(37,99,235,.1); color:var(--accent); border-color:rgba(37,99,235,.28); font-weight:600; }
+  .plug-chip.off { opacity:.5; }
+  .crumbbar, .hero, .pipe-board, .hero-card, .hero-side { display:none; }
+</style>
+</head>
+<body><div id="offlineWarn" style="display:none; background:#fef2f2; color:#b91c1c; padding:8px 14px; font-size:13px; text-align:center;">图表组件加载失败：缺少 frontend/vendor/echarts.min.js。</div>
+<header>
+  <div class="topbar">
+    <div class="brand"><div class="logo">知</div><div><b>知产看天</b><span>农业遥感智能分析软件 V1.0</span></div></div>
+    <div class="top-tools">
+      <span class="user-chip" id="userChip" title="当前登录账号">—</span>
+      <a class="admin-link" href="/logout" title="退出登录">退出</a>
+      <button class="hbtn" id="btnTheme" title="切换深色/浅色（快捷键 D）">深色</button>
+      <button class="hbtn" id="btnCockpit" title="数据看板（快捷键 F）">看板</button>
+      <span class="clock" id="clock">--:--:--</span>
+      <div class="status"><span class="dot" id="srvDot"></span><span id="srvText">检测中</span></div>
+    </div>
+  </div>
+  <div class="nav-row">
+    <button class="tab active" data-tab="overview">概览</button>
+    <button class="tab" data-tab="datahub">数据</button>
+    <button class="tab" data-tab="stress">胁迫</button>
+    <button class="tab" data-tab="yieldhub">估产</button>
+    <button class="tab" data-tab="history">记录</button>
+    <button class="tab" data-tab="cockpit">看板</button>
+  </div>
+</header>
+<main>
+  <div class="subnav" id="subnavData">
+    <span class="lab">模块</span>
+    <button class="stab" data-sub="import" onclick="go('import')">识别整理</button>
+    <button class="stab" data-sub="data" onclick="go('data')">上传训练</button>
+  </div>
+  <div class="subnav" id="subnavYield">
+    <span class="lab">模块</span>
+    <button class="stab" data-sub="train" onclick="go('train')">训练</button>
+    <button class="stab" data-sub="analysis" onclick="go('analysis')">分析</button>
+    <button class="stab" data-sub="predict" onclick="go('predict')">预测</button>
+  </div>
+
+  <section class="view active" id="view-overview">
+    <div id="ovFilled">
+    <div class="plug-bar" data-bar="overview">
+      <span class="lab">插件</span>
+      <button class="plug-chip on" type="button" data-plug="ov-stress">胁迫</button>
+      <button class="plug-chip on" type="button" data-plug="ov-yield">估产</button>
+    </div>
+    <div class="dock">
+      <button class="dock-item" onclick="go('stress')" type="button">
+        <div class="k">胁迫 · <span id="heroHot">≥35℃</span> / <span id="heroMild">≥30℃</span></div>
+        <div class="v" id="ovHot35">—</div>
+        <div class="t">高温日</div>
+      </button>
+      <button class="dock-item" onclick="go('stress')" type="button">
+        <div class="k">预警</div>
+        <div class="v" id="ovWarn" style="font-size:18px">—</div>
+        <div class="t">胁迫监测</div>
+      </button>
+      <button class="dock-item" onclick="go('yieldhub')" type="button">
+        <div class="k">估产 R²</div>
+        <div class="v" id="ovR2">—</div>
+        <div class="t">产量预估</div>
+      </button>
+      <button class="dock-item" onclick="go('import')" type="button">
+        <div class="k">账号 <span id="heroUser">—</span></div>
+        <div class="v" id="ovSamples">—</div>
+        <div class="t">整理数据</div>
+      </button>
+    </div>
+    <div class="track-grid">
+      <div class="card plug" data-plug="ov-stress">
+        <h2 class="plug-head"><span class="ico">☀</span>高温胁迫监测 <span class="badge-main">主</span>
+          <button class="plug-tog" type="button">收起</button></h2>
+        <div class="plug-body">
+        <div class="kpis" style="margin-bottom:10px">
+          <div class="kpi o"><div class="label">≥30℃ 天</div><div class="value" id="ovHot30">—</div></div>
+          <div class="kpi p"><div class="label">强度</div><div class="value" id="ovLevel" style="font-size:18px">—</div></div>
+        </div>
+        <div class="insight"><span id="ovStressText">尚未运行胁迫分析。</span></div>
+        <div style="margin-top:10px"><button class="btn sm" onclick="go('stress')">分析</button></div>
+        </div>
+      </div>
+      <div class="card plug" data-plug="ov-yield">
+        <h2 class="plug-head"><span class="ico">◈</span>产量预估 <span class="badge-sub">辅</span>
+          <button class="plug-tog" type="button">收起</button></h2>
+        <div class="plug-body">
+        <div class="kpis" style="margin-bottom:10px">
+          <div class="kpi g"><div class="label">最优模型</div><div class="value" id="ovModel" style="font-size:16px">—</div></div>
+          <div class="kpi p"><div class="label">RMSE</div><div class="value" id="ovRmse">—</div><div class="unit">kg/hm²</div></div>
+        </div>
+        <div class="insight"><span id="ovInsightText">尚未训练产量模型。</span></div>
+        <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap">
+          <button class="btn sm" onclick="go('yieldhub')">训练</button>
+          <button class="btn ghost sm" onclick="selfcheck()">自检</button>
+        </div>
+        </div>
+      </div>
+    </div>
+    </div>
+  </section>
+
+  <section class="view" id="view-import">
+    <div class="plug-bar" data-bar="import">
+      <span class="lab">插件</span>
+      <button class="plug-chip on" type="button" data-plug="imp-in">整理</button>
+      <button class="plug-chip on" type="button" data-plug="imp-out">报告</button>
+    </div>
+    <div class="card plug" data-plug="imp-in">
+      <h2 class="plug-head"><span class="ico">⇲</span>识别整理
+        <button class="plug-tog" type="button">收起</button></h2>
+      <div class="plug-body">
+      <label>数据文件（csv / xlsx / zip / txt / dat）</label>
+      <input type="file" id="impFile" accept=".csv,.xls,.xlsx,.zip,.txt,.dat">
+      <div style="margin-top:14px; display:flex; gap:10px; flex-wrap:wrap;">
+        <button class="btn" id="btnImport" onclick="importFile()">识别并整理</button>
+        <button class="btn ghost" id="btnImportStress" disabled onclick="useImportedStress()">胁迫分析</button>
+        <button class="btn ghost" id="btnImportTrain" disabled onclick="useImported()">产量训练</button>
+      </div>
+      <div class="hint" id="impHint"></div>
+      </div>
+    </div>
+    <div class="card plug" id="impReport" data-plug="imp-out">
+      <h2 class="plug-head"><span class="ico">▤</span>识别报告
+        <button class="plug-tog" type="button">收起</button></h2>
+      <div class="plug-body">
+      <div id="impKind" style="margin-bottom:8px"><span class="tag">类型：—</span></div>
+      <div id="impMsg" class="insight" style="margin-top:8px">暂无识别报告。</div>
+      <div id="impInfo" style="margin-top:12px"></div>
+      <div id="impTables" style="margin-top:12px"><div class="empty">暂无预览</div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="view" id="view-data">
+    <div class="plug-bar" data-bar="data">
+      <span class="lab">插件</span>
+      <button class="plug-chip on" type="button" data-plug="data-in">上传</button>
+      <button class="plug-chip on" type="button" data-plug="data-prev">预览</button>
+      <button class="plug-chip on" type="button" data-plug="data-hist">历史</button>
+    </div>
+    <div class="card plug" data-plug="data-in">
+      <h2 class="plug-head"><span class="ico">⇪</span>上传
+        <button class="plug-tog" type="button">收起</button></h2>
+      <div class="plug-body">
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+        <div>
+          <label>数据文件</label>
+          <input type="file" id="file" accept=".csv,.xls,.xlsx,.zip">
+          <div class="hint" id="fileInfo"></div>
+          <label>目标列（产量）</label>
+          <input type="text" id="target" value="yield">
+        </div>
+        <div>
+          <label>辅助表（可选）</label>
+          <div style="display:flex; gap:8px; flex-direction:column;">
+            <div><div class="hint" style="margin:0 0 2px">气象 weather.csv</div><input type="file" id="wf" accept=".csv,.xls,.xlsx"></div>
+            <div><div class="hint" style="margin:0 0 2px">物候 phenology.csv</div><input type="file" id="pf" accept=".csv,.xls,.xlsx"></div>
+            <div><div class="hint" style="margin:0 0 2px">产量 yield.csv</div><input type="file" id="yf" accept=".csv,.xls,.xlsx"></div>
+            <div><div class="hint" style="margin:0 0 2px">种植 planting.csv</div><input type="file" id="pfp" accept=".csv,.xls,.xlsx"></div>
+          </div>
+          <label style="margin-top:10px"><input type="checkbox" id="autouse"> 自动匹配已上传辅助表</label>
+        </div>
+      </div>
+      <div style="margin-top:14px"><button class="btn" onclick="go('train')">去训练</button></div>
+      </div>
+    </div>
+    <div class="card plug" id="previewCard" data-plug="data-prev">
+      <h2 class="plug-head"><span class="ico">▤</span>预览
+        <button class="plug-tog" type="button">收起</button></h2>
+      <div class="plug-body">
+      <div class="desc" id="previewDesc">上传后显示列与前几行。</div>
+      <div class="tbl-wrap" id="previewTable"><div class="empty">暂无预览</div></div>
+      </div>
+    </div>
+    <div class="card plug" id="impHistCard" data-plug="data-hist">
+      <h2 class="plug-head"><span class="ico">⇪</span>导入历史
+        <button class="btn ghost sm" style="padding:4px 10px; font-size:12px" onclick="event.stopPropagation(); loadImportHistory()">刷新</button>
+        <button class="plug-tog" type="button">收起</button></h2>
+      <div class="plug-body">
+      <div class="tbl-wrap" id="impHistBox"><div class="empty">暂无导入记录</div></div>
+      <div style="margin-top:8px"><button class="btn ghost sm" style="color:#dc2626" onclick="clearImportHistory()">清空导入历史</button></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="view" id="view-train">
+    <div class="plug-bar" data-bar="train">
+      <span class="lab">插件</span>
+      <button class="plug-chip on" type="button" data-plug="tr-cfg">配置</button>
+      <button class="plug-chip on" type="button" data-plug="tr-out">结果</button>
+    </div>
+    <div class="card plug" data-plug="tr-cfg">
+      <h2 class="plug-head"><span class="ico">⚙</span>训练配置
+        <button class="plug-tog" type="button">收起</button></h2>
+      <div class="plug-body">
+      <div class="desc">不预选。按数据类型勾选至少一个。小样本走留一法。LSTM / Transformer 需 torch。</div>
+      <label>候选模型</label>
+      <div class="chips" id="models"></div>
+      <label style="margin-top:12px"><input type="checkbox" id="autofs" checked> 自动特征筛选</label>
+      <div class="insight" id="trainImportHint" style="display:none;margin-top:12px"></div>
+      <div style="margin-top:14px; display:flex; gap:10px; flex-wrap:wrap">
+        <button class="btn" id="btnTrain" onclick="train()">开始训练</button>
+        <button class="btn ghost" onclick="selfcheck()">功能自检</button>
+      </div>
+      </div>
+    </div>
+    <div class="card after-action" id="trainProgressCard">
+      <h2><span class="ico">◔</span>训练进度</h2>
+      <div class="desc" id="trainDesc"></div>
+      <div class="progress-wrap" id="progressWrap">
+        <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+        <div class="progress-text"><span id="progressMsg">准备中…</span><span id="progressPct">0%</span></div>
+        <div class="stage-line" id="stageLine"></div>
+      </div>
+    </div>
+    <div class="card plug" id="trainResult" data-plug="tr-out">
+      <h2 class="plug-head"><span class="ico">✓</span>训练结果
+        <button class="plug-tog" type="button">收起</button></h2>
+      <div class="plug-body">
+      <div class="kpis">
+        <div class="kpi g"><div class="label">最优模型</div><div class="value" id="trModel" style="font-size:20px">—</div></div>
+        <div class="kpi"><div class="label">样本数</div><div class="value" id="trSamples">—</div></div>
+        <div class="kpi"><div class="label">特征数</div><div class="value" id="trFeat">—</div></div>
+        <div class="kpi o"><div class="label">R²</div><div class="value" id="trR2">—</div></div>
+        <div class="kpi p"><div class="label">RMSE</div><div class="value" id="trRmse">—</div><div class="unit">kg/hm²</div></div>
+      </div>
+      <div class="insight"><span id="trInsight">尚未训练。</span></div>
+      <div id="smallWarnTrain" class="hint" style="color:#d97706; margin-top:8px"></div>
+      <div class="hint" id="trFeatures" style="margin-top:10px"></div>
+      <div style="margin-top:14px"><button class="btn" onclick="go('analysis')">查看分析</button></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="view" id="view-analysis">
+    <div id="analysisFilled">
+    <div class="plug-bar" data-bar="analysis">
+      <span class="lab">插件</span>
+      <button class="plug-chip on" type="button" data-plug="an-rank">择优</button>
+      <button class="plug-chip on" type="button" data-plug="an-health">体检</button>
+      <button class="plug-chip on" type="button" data-plug="an-charts">图表</button>
+      <button class="plug-chip on" type="button" data-plug="an-resid">残差</button>
+      <button class="plug-chip on" type="button" data-plug="an-report">报告</button>
+    </div>
+    <div class="card plug" data-plug="an-rank">
+      <h2 class="plug-head"><span class="ico">☰</span>模型择优
+        <button class="plug-tog" type="button">收起</button></h2>
+      <div class="plug-body">
+      <div class="desc">综合分 = 0.4×R² + 0.3×(1−RMSE归一) + 0.3×(1−MAE归一)</div>
+      <div class="tbl-wrap"><table id="rankTable"><thead><tr>
+        <th>排名</th><th>模型</th><th>说明</th><th>R²↑</th><th>RMSE↓(kg/hm²)</th><th>MAE↓(kg/hm²)</th><th>RRMSE↓</th><th>MAPE↓(%)</th><th>综合分</th><th>交叉验证</th>
+      </tr></thead><tbody><tr><td colspan="10" class="empty">训练完成后显示模型对比</td></tr></tbody></table></div>
+      <div id="smallWarnAnalysis" class="hint" style="color:#d97706; margin-top:8px"></div>
+      </div>
+    </div>
+    <div class="card plug" id="healthCard" data-plug="an-health">
+      <h2 class="plug-head"><span class="ico">♥</span>数据体检
+        <button class="plug-tog" type="button">收起</button></h2>
+      <div class="plug-body">
+      <div id="healthBody"><div class="empty">训练完成后显示样本规模与指标解读。</div></div>
+      </div>
+    </div>
+    <div class="card plug" data-plug="an-charts">
+      <h2 class="plug-head"><span class="ico">◔</span>图表
+        <button class="plug-tog" type="button">收起</button></h2>
+      <div class="plug-body">
+      <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(320px,1fr)); gap:16px;">
+        <div class="carousel-card focus" id="cc1">
+          <h2><span class="ico">▥</span>性能对比 <button class="btn ghost sm" style="margin-left:auto; padding:4px 10px; font-size:12px" onclick="downloadChart('chartMetrics','模型性能对比')">PNG</button></h2>
+          <div class="chart" id="chartMetrics"></div>
+        </div>
+        <div class="carousel-card dim" id="cc2">
+          <h2><span class="ico">◉</span>真实 vs 预测 <button class="btn ghost sm" style="margin-left:auto; padding:4px 10px; font-size:12px" onclick="downloadChart('chartScatter','真实vs预测产量')">PNG</button></h2>
+          <div class="chart" id="chartScatter"></div>
+        </div>
+        <div class="carousel-card dim" id="cc3">
+          <h2><span class="ico">≣</span>特征重要性 <button class="btn ghost sm" style="margin-left:auto; padding:4px 10px; font-size:12px" onclick="downloadChart('chartImp','特征重要性')">PNG</button></h2>
+          <div class="chart" id="chartImp" style="height:280px"></div>
+        </div>
+        <div class="carousel-card dim" id="cc4">
+          <h2><span class="ico">◎</span>综合雷达 <button class="btn ghost sm" style="margin-left:auto; padding:4px 10px; font-size:12px" onclick="downloadChart('chartRadar','模型雷达图')">PNG</button></h2>
+          <div class="chart" id="chartRadar"></div>
+        </div>
+      </div>
+      <div class="carousel-dots" id="carouselDots"></div>
+      </div>
+    </div>
+    <div class="card plug" data-plug="an-resid">
+      <h2 class="plug-head"><span class="ico">↗</span>残差
+        <button class="btn ghost sm" style="padding:4px 10px; font-size:12px" onclick="event.stopPropagation(); downloadChart('chartResid','残差图')">PNG</button>
+        <button class="plug-tog" type="button">收起</button></h2>
+      <div class="plug-body">
+      <div class="chart" id="chartResid" style="height:260px"></div>
+      </div>
+    </div>
+    <div class="card plug" data-plug="an-report">
+      <h2 class="plug-head"><span class="ico">▤</span>分析报告
+        <button class="plug-tog" type="button">收起</button></h2>
+      <div class="plug-body">
+      <div style="display:flex; gap:14px; align-items:center; flex-wrap:wrap;">
+        <button class="btn" id="btnReport" onclick="generateReport()">生成分析报告</button>
+        <label style="font-weight:400; font-size:13px; display:flex; align-items:center; gap:6px; margin:0;">
+          <input type="checkbox" id="useLlm" checked> 撰写分析说明（默认内置；已配置对话接口时才走外网）
+        </label>
+      </div>
+      <div class="hint" id="reportStatus"></div>
+      <div id="reportBox" style="display:none; margin-top:14px;">
+        <div style="display:flex; gap:10px; margin-bottom:10px; flex-wrap:wrap;">
+          <button class="btn ghost sm" onclick="downloadReport('html')">HTML</button>
+          <button class="btn ghost sm" onclick="downloadReport('md')">Markdown</button>
+          <button class="btn ghost sm" onclick="downloadPredictions()">预测 CSV</button>
+        </div>
+        <iframe id="reportFrame" style="width:100%; height:560px; border:1px solid var(--line); border-radius:10px; background:#fff;"></iframe>
+      </div>
+      </div>
+    </div>
+    </div>
+  </section>
+
+  <section class="view" id="view-history">
+    <div class="card plug" id="historyCard" data-plug="hist">
+      <h2 class="plug-head"><span class="ico">◷</span>训练记录
+        <button class="plug-tog" type="button">收起</button></h2>
+      <div class="plug-body">
+      <div style="margin-bottom:12px; display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+        <button class="btn ghost sm" onclick="loadTasks()">刷新 ↻</button>
+        <select id="fStatus" style="width:auto; padding:6px 10px; font-size:13px;" onchange="loadTasks()">
+          <option value="">全部状态</option>
+          <option value="done">已完成</option>
+          <option value="running">进行中</option>
+          <option value="failed">失败</option>
+        </select>
+        <input type="date" id="fFrom" style="width:auto; padding:6px 10px; font-size:13px;" onchange="loadTasks()">
+        <span style="color:var(--muted)">至</span>
+        <input type="date" id="fTo" style="width:auto; padding:6px 10px; font-size:13px;" onchange="loadTasks()">
+        <select id="fSort" style="width:auto; padding:6px 10px; font-size:13px;" onchange="loadTasks()">
+          <option value="">按时间（最新在前）</option>
+          <option value="r2_desc">按 R² 从高到低</option>
+          <option value="r2_asc">按 R² 从低到高</option>
+        </select>
+        <button class="btn ghost sm" onclick="exportHistory()">导出 Excel 报告</button>
+        <button class="btn ghost sm" style="color:#dc2626; margin-left:auto" onclick="clearTasks()">清空全部记录</button>
+        <button class="btn ghost sm" style="color:#b91c1c" onclick="resetAllFactory()">一键恢复出厂</button>
+      </div>
+      <div class="tbl-wrap"><table id="taskTable"><thead><tr>
+        <th>任务ID</th><th>时间</th><th>状态</th><th>目标列</th><th>模型</th><th>最优</th><th>R²</th><th>RMSE</th><th>MAE</th><th>操作</th>
+      </tr></thead><tbody><tr><td colspan="10" class="empty">暂无训练记录</td></tr></tbody></table></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="view" id="view-predict">
+    <div class="plug-bar" data-bar="predict">
+      <span class="lab">插件</span>
+      <button class="plug-chip on" type="button" data-plug="pd-model">模型</button>
+      <button class="plug-chip on" type="button" data-plug="pd-run">预测</button>
+    </div>
+    <div class="card plug" id="modelInfoCard" data-plug="pd-model">
+      <h2 class="plug-head"><span class="ico">◈</span>当前模型
+        <button class="btn ghost sm" style="padding:4px 10px; font-size:12px" onclick="event.stopPropagation(); loadModelInfo(true)">刷新</button>
+        <button class="plug-tog" type="button">收起</button></h2>
+      <div class="plug-body">
+      <div id="modelInfoBody"><div class="empty">还没有训练模型。完成后这里显示将用于预测的模型与指标。</div></div>
+      </div>
+    </div>
+    <div class="card plug" data-plug="pd-run">
+      <h2 class="plug-head"><span class="ico">➤</span>产量预测
+        <button class="plug-tog" type="button">收起</button></h2>
+      <div class="plug-body">
+      <label>新数据（与训练同结构）</label>
+      <input type="file" id="predFile" accept=".csv,.xls,.xlsx">
+      <div style="margin-top:14px; display:flex; gap:10px; flex-wrap:wrap;">
+        <button class="btn" onclick="predictPreview()">预览预测</button>
+        <button class="btn ghost" onclick="downloadPrediction()" id="btnPredDownload" style="display:none">下载 CSV</button>
+        <button class="btn ghost" onclick="downloadPredTemplate('daily')">逐日模板</button>
+        <button class="btn ghost" onclick="downloadPredTemplate('features')">特征模板</button>
+        <button class="btn ghost" onclick="downloadPredTemplate('features','1')">特征示例</button>
+      </div>
+      <div class="hint" id="predInfo"></div>
+      <div id="predPreviewWrap" style="display:none; margin-top:14px; background:#f8fafc; border:1px solid var(--line); border-radius:12px; padding:12px;">
+        <b style="font-size:13px">预览（kg/hm²）</b>
+        <div class="hint" id="predPreviewInfo" style="margin:6px 0"></div>
+        <div class="tbl-wrap" id="predPreviewTable" style="max-height:320px; overflow:auto"></div>
+        <div style="margin-top:10px; display:flex; gap:10px; flex-wrap:wrap;">
+          <button class="btn sm" onclick="downloadPrediction()">下载 CSV</button>
+        </div>
+      </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="view" id="view-stress">
+    <div class="plug-bar" data-bar="stress">
+      <span class="lab">插件</span>
+      <button class="plug-chip on" type="button" data-plug="st-in">输入</button>
+      <button class="plug-chip on" type="button" data-plug="st-kpi">指标</button>
+      <button class="plug-chip on" type="button" data-plug="st-curve">曲线</button>
+      <button class="plug-chip on" type="button" data-plug="st-pc">前中后</button>
+      <button class="plug-chip on" type="button" data-plug="st-vip">VIP</button>
+      <button class="plug-chip on" type="button" data-plug="st-treat">处理</button>
+      <button class="plug-chip on" type="button" data-plug="st-heat">热力</button>
+      <button class="plug-chip on" type="button" data-plug="st-clf">分类</button>
+    </div>
+    <div class="card plug" data-plug="st-in">
+      <h2 class="plug-head"><span class="ico">☀</span>胁迫分析
+        <button class="plug-tog" type="button">收起</button></h2>
+      <div class="plug-body">
+      <div class="insight" id="stressImportHint" style="display:none;margin-bottom:12px"></div>
+      <label>逐日信号表（已整理可跳过）</label>
+      <input type="file" id="stressFile" accept=".csv,.xls,.xlsx,.txt">
+      <label style="margin-top:8px">气象表（可选，已导入 weather.csv 会自动用）</label>
+      <input type="file" id="stressWFile" accept=".csv,.xls,.xlsx,.txt">
+      <div style="margin-top:14px; display:flex; gap:10px; flex-wrap:wrap;">
+        <button class="btn" id="btnStress" onclick="runStress()">运行分析</button>
+        <button class="btn ghost" id="btnStressBuiltin" onclick="runStressBuiltin()">示例数据</button>
+        <button class="btn ghost" onclick="downloadStressBrief('md')">简报 MD</button>
+        <button class="btn ghost" onclick="downloadStressBrief('html')">简报网页</button>
+      </div>
+      <div class="hint" id="stressStatus"></div>
+      </div>
+    </div>
+
+    <div id="stressResult">
+      <div class="card plug" data-plug="st-kpi">
+        <h2 class="plug-head"><span class="ico">▣</span>监测指标
+          <button class="plug-tog" type="button">收起</button></h2>
+        <div class="plug-body">
+      <div class="kpis" style="margin-bottom:0">
+        <div class="kpi o"><div class="label">≥30℃ 天数</div><div class="value" id="stHot30">—</div></div>
+        <div class="kpi"><div class="label">≥35℃ 天数</div><div class="value" id="stHot35">—</div></div>
+        <div class="kpi"><div class="label">最长连续高温</div><div class="value" id="stStreak">—</div><div class="unit">天</div></div>
+        <div class="kpi p"><div class="label">强度等级</div><div class="value" id="stLevel" style="font-size:20px">—</div></div>
+        <div class="kpi g"><div class="label">预警</div><div class="value" id="stWarn" style="font-size:16px">—</div></div>
+      </div>
+        </div>
+      </div>
+      <div class="card plug" data-plug="st-curve">
+        <h2 class="plug-head"><span class="ico">◠</span>生长季曲线
+          <button class="plug-tog" type="button">收起</button></h2>
+        <div class="plug-body">
+        <div class="desc" id="stCurveDesc">红点为 ≥35℃ 高温日。</div>
+        <div class="chart" id="stCurveChart" style="height:320px"></div>
+        </div>
+      </div>
+      <div class="grid2">
+        <div class="card plug" data-plug="st-pc">
+          <h2 class="plug-head"><span class="ico">◉</span>前-中-后
+            <button class="plug-tog" type="button">收起</button></h2>
+          <div class="plug-body">
+          <div class="desc" id="stPcDesc"></div>
+          <div class="chart" id="stPcChart" style="height:300px"></div>
+          </div>
+        </div>
+        <div class="card plug" data-plug="st-vip">
+          <h2 class="plug-head"><span class="ico">≣</span>VIP
+            <button class="plug-tog" type="button">收起</button></h2>
+          <div class="plug-body">
+          <div class="desc" id="stIndDesc"></div>
+          <div class="chart" id="stIndChart" style="height:300px"></div>
+          </div>
+        </div>
+      </div>
+      <div class="card plug" data-plug="st-treat">
+        <h2 class="plug-head"><span class="ico">▤</span>处理组对比
+          <button class="plug-tog" type="button">收起</button></h2>
+        <div class="plug-body">
+        <div class="desc" id="stTreatDesc">含处理 / 水分 / 肥料字段时显示。</div>
+        <div id="stTreatTable"><div class="empty">暂无处理组对比</div></div>
+        </div>
+      </div>
+      <div class="card plug" data-plug="st-heat">
+        <h2 class="plug-head"><span class="ico">▦</span>热力与距平
+          <button class="plug-tog" type="button">收起</button></h2>
+        <div class="plug-body">
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+          <div>
+            <b style="font-size:13px">高温日历</b>
+            <div class="chart" id="stCalChart" style="height:320px"></div>
+          </div>
+          <div>
+            <b style="font-size:13px">SIF 距平</b>
+            <div class="desc" id="stAnomDesc"></div>
+            <div class="chart" id="stAnomChart" style="height:320px"></div>
+          </div>
+        </div>
+        <div style="margin-top:14px;">
+          <b style="font-size:13px">处理组箱线</b>
+          <div class="desc" id="stBoxDesc"></div>
+          <div class="chart" id="stBoxChart" style="height:340px"></div>
+        </div>
+        <div style="margin-top:14px;">
+          <b style="font-size:13px">机制小结</b>
+          <div id="stMechBody" class="desc">运行分析后显示小结。</div>
+        </div>
+        </div>
+      </div>
+      <div class="card plug" data-plug="st-clf">
+        <h2 class="plug-head"><span class="ico">▤</span>分类
+          <button class="plug-tog" type="button">收起</button></h2>
+        <div class="plug-body">
+        <div class="desc" id="stClfDesc">等级：0无 / 1轻 / 2中 / 3重</div>
+        <div id="stClf"><div class="empty">运行分析后显示分类结果</div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+
+  <div class="modal" id="taskModal" style="display:none">
+    <div class="modal-box">
+      <div class="modal-head"><b>任务详情</b><button class="hbtn" onclick="closeTaskModal()">✕</button></div>
+      <div id="taskDetail" style="max-height:70vh; overflow:auto;"></div>
+    </div>
+  </div>
+
+<footer>
+  <div class="foot-inner">
+    <div>知产看天农业遥感智能分析软件 V1.0　｜　胁迫：℃　估产：kg/hm²</div>
+    <div>快捷键 D 切换主题　F 打开看板　Esc 关闭浮层</div>
+  </div>
+</footer>
+<div class="toast" id="toast"></div>
+
+<div class="cockpit-wrap" id="cockpit">
+  <div class="cp-head">
+    <div class="cp-title">知产看天 · 胁迫监测与估产看板</div>
+    <div class="cp-clock"><span id="cpTime">--:--:--</span><div class="cp-date" id="cpDate">----</div></div>
+  </div>
+  <div class="cp-body">
+    <div class="cp-kpis">
+      <div class="cp-kpi"><div class="label">样本数</div><div class="value" id="cpSamples">—</div><div class="unit">个</div></div>
+      <div class="cp-kpi"><div class="label">特征数</div><div class="value" id="cpFeat">—</div></div>
+      <div class="cp-kpi"><div class="label">最优模型</div><div class="value" id="cpModel" style="font-size:22px">—</div></div>
+      <div class="cp-kpi"><div class="label">R²</div><div class="value" id="cpR2">—</div></div>
+      <div class="cp-kpi"><div class="label">RMSE</div><div class="value" id="cpRmse">—</div><div class="unit">kg/hm²</div></div>
+    </div>
+    <div class="cp-grid">
+      <div class="cp-main">
+        <div class="cp-chart-title" id="cpChartTitle">模型性能对比</div>
+        <div class="cp-dots" id="cpDots"></div>
+        <div class="cp-chart active" id="cp-c0"><div id="cpChart0" style="width:100%;height:100%"></div></div>
+        <div class="cp-chart" id="cp-c1"><div id="cpChart1" style="width:100%;height:100%"></div></div>
+        <div class="cp-chart" id="cp-c2"><div id="cpChart2" style="width:100%;height:100%"></div></div>
+        <div class="cp-chart" id="cp-c3"><div id="cpChart3" style="width:100%;height:100%"></div></div>
+        <div class="cp-chart" id="cp-c4"><div id="cpChart4" style="width:100%;height:100%"></div></div>
+      </div>
+      <div class="cp-side">
+        <div class="cp-panel">
+          <h3>系统状态</h3>
+          <div class="cp-row"><span>平台服务</span><b id="cpSrv">检测中</b></div>
+          <div class="cp-row"><span>最近任务</span><b id="cpLastTask">–</b></div>
+          <div class="cp-row"><span>数据源</span><b>当前工作区数据</b></div>
+          <div class="cp-row"><span>分析模式</span><b>按样地建模</b></div>
+        </div>
+        <div class="cp-panel">
+          <h3>实时动态</h3>
+          <div class="ticker" id="cpTicker"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <button class="cp-exit" onclick="toggleCockpit(false)">退出全屏（Esc）</button>
+</div>
+<script>
+const MODEL_META = {
+  hgb:"表格特征 · 中小样本",
+  lightgbm:"表格特征 · 中大样本",
+  catboost:"表格特征 · 含类别 / 小样本较稳",
+  gpr:"特征不多的小样本",
+  kernel_ridge:"小样本非线性",
+  plsr:"高维光谱 · 特征多于样本",
+  ridge:"线性基线 · 特征不宜过多",
+  xgboost:"表格特征 · 中大样本",
+  rf:"表格特征 · 可看特征贡献",
+  svr:"中小样本非线性",
+  extratrees:"表格特征 · 对照树模型",
+  elasticnet:"高维稀疏线性",
+  lstm:"长时序 / 多样本（小样本易过拟合，需 torch）",
+  transformer:"长时序 / 多样本（小样本易过拟合，需 torch）"
+};
+const MODEL_FULL = {
+  hgb:"HGB", lightgbm:"LightGBM", catboost:"CatBoost", gpr:"GPR",
+  kernel_ridge:"核岭", plsr:"PLSR", ridge:"Ridge",
+  xgboost:"XGBoost", rf:"随机森林", svr:"SVR", extratrees:"ExtraTrees", elasticnet:"ElasticNet",
+  lstm:"LSTM", transformer:"Transformer",
+  logit:"逻辑回归"
+};
+let lastResult = null;
+let lastStress = null;
+let sessionTrained = false;
+let importedRef = "";
+let importedKind = "";
+let importedWeather = false;
+const STRESS_KINDS = { daily_table:1, universal_table:1, sif_folder:1, sif_zip:1, sample_table:1 };
+const YIELD_KINDS = { daily_table:1, sample_table:1, sif_folder:1, sif_zip:1, universal_table:1, yield_table:1, portable_spectra:1, experiment_excel:1 };
+let pollTimer = null, carouselTimer = null, cpTimer = null, cpCycle = null, insightTimer = null, toastTimer = null;
+let chartCache = {}, carouselIdx = 0, cpCurrent = 0;
+const CHART_TITLES = ["模型性能对比", "真实 vs 预测产量", "特征重要性（最优模型）", "模型综合能力雷达"];
+
+/* ===== 主题 ===== */
+function applyTheme(dark) {
+  document.documentElement.setAttribute("data-theme", dark ? "dark" : "light");
+  document.getElementById("btnTheme").textContent = dark ? "浅色" : "深色";
+  try { localStorage.setItem("zct_theme", dark ? "dark" : "light"); } catch(e) {}
+  resizeCharts();
+}
+(function(){ let s = "light"; try { s = localStorage.getItem("zct_theme") || "light"; } catch(e) {} applyTheme(s === "dark"); })();
+document.getElementById("btnTheme").onclick = () => applyTheme(document.documentElement.getAttribute("data-theme") !== "dark");
+function toggleGuide(open) {
+  const m = document.getElementById("guideMask");
+  if (!m) return;
+  m.classList.toggle("open", !!open);
+}
+
+/* ===== 时钟 ===== */
+function pad(n){ return String(n).padStart(2,"0"); }
+function tickClock() {
+  const d = new Date();
+  const t = pad(d.getHours()) + ":" + pad(d.getMinutes()) + ":" + pad(d.getSeconds());
+  const el1 = document.getElementById("clock"); if (el1) el1.textContent = t;
+  const el2 = document.getElementById("cpTime"); if (el2) el2.textContent = t;
+  const el3 = document.getElementById("cpDate"); if (el3) el3.textContent = d.getFullYear() + "-" + pad(d.getMonth()+1) + "-" + pad(d.getDate()) + " 星期" + "日一二三四五六".charAt(d.getDay());
+}
+setInterval(tickClock, 1000); tickClock();
+
+/* ===== 工具 ===== */
+function toast(msg, type) {
+  const t = document.getElementById("toast");
+  t.textContent = msg; t.className = "toast show " + (type || "");
+  clearTimeout(toastTimer); toastTimer = setTimeout(function(){ t.className = "toast"; }, 3400);
+}
+function countUp(el, target, dec) {
+  if (!el) return;
+  dec = dec || 0; const dur = 900; const start = performance.now();
+  function tick(now) {
+    const p = Math.min(1, (now - start) / dur);
+    const v = target * (1 - Math.pow(1 - p, 3));
+    el.textContent = dec > 0 ? v.toFixed(dec) : Math.round(v).toLocaleString();
+    if (p < 1) requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+}
+function typeText(el, text) {
+  if (!el) return;
+  clearInterval(insightTimer);
+  el.textContent = text || "";
+}
+function showBlock(id, on) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.classList.toggle("show", !!on);
+  if (el.classList.contains("after-action")) return;
+  el.style.display = on ? "" : "none";
+}
+function hasYieldData() { return !!(sessionTrained && lastResult); }
+function hasStressData() { return !!(lastStress && lastStress.ok !== false && (lastStress.seasons || lastStress.has_stress)); }
+function syncBlankPages() {
+  const running = document.getElementById("progressWrap") && document.getElementById("progressWrap").classList.contains("show");
+  showBlock("trainProgressCard", !!running);
+}
+const DATA_TABS = ["import", "data"];
+const YIELD_TABS = ["train", "analysis", "predict"];
+function go(name) {
+  if (name === "datahub") name = "import";
+  if (name === "yieldhub") name = lastResult ? "analysis" : "train";
+  const parent = DATA_TABS.indexOf(name) >= 0 ? "datahub"
+               : YIELD_TABS.indexOf(name) >= 0 ? "yieldhub" : name;
+  document.querySelectorAll(".tab").forEach(function(b){ b.classList.toggle("active", b.dataset.tab === parent); });
+  document.querySelectorAll(".view").forEach(function(v){ v.classList.remove("active"); });
+  const v = document.getElementById("view-" + name); if (v) v.classList.add("active");
+  const sd = document.getElementById("subnavData");
+  const sy = document.getElementById("subnavYield");
+  if (sd) { sd.classList.toggle("show", DATA_TABS.indexOf(name) >= 0); sd.querySelectorAll(".stab").forEach(function(s){ s.classList.toggle("on", s.dataset.sub === name); }); }
+  if (sy) { sy.classList.toggle("show", YIELD_TABS.indexOf(name) >= 0); sy.querySelectorAll(".stab").forEach(function(s){ s.classList.toggle("on", s.dataset.sub === name); }); }
+  if (name === "analysis" && hasYieldData()) renderCharts();
+  if (name === "history") loadTasks();
+  if (name === "overview") refreshOverview();
+  if (name === "predict" && modelInfoReady) loadModelInfo();
+  if (name === "train" || name === "stress") refreshImportHints();
+  resizeCharts();
+}
+document.querySelectorAll(".tab").forEach(function(b){
+  b.addEventListener("click", function(){ if (b.dataset.tab === "cockpit") { toggleCockpit(true); } else { go(b.dataset.tab); } });
+});
+document.getElementById("btnCockpit").onclick = function(){ toggleCockpit(true); };
+
+/* ===== 快捷键 ===== */
+document.addEventListener("keydown", function(e){
+  if (e.key === "d" || e.key === "D") applyTheme(document.documentElement.getAttribute("data-theme") !== "dark");
+  if (e.key === "f" || e.key === "F") toggleCockpit(true);
+  if (e.key === "Escape") { toggleCockpit(false); toggleGuide(false); }
+});
+
+/* ===== 服务状态 ===== */
+async function loadUser() {
+  try {
+    const r = await fetch("/api/me");
+    if (r.status === 401) { location.href = "/login"; return; }
+    if (!r.ok) return;
+    const d = await r.json();
+    const el = document.getElementById("userChip");
+    if (el) el.textContent = d.username || "—";
+    const hu = document.getElementById("heroUser");
+    if (hu) hu.textContent = d.username || "—";
+  } catch (e) {}
+}
+loadUser();
+async function loadPlatform() {
+  try {
+    const r = await fetch("/api/platform");
+    if (!r.ok) return;
+    const d = await r.json();
+    const mild = (d.thresholds && d.thresholds.mild) || 30;
+    const hot = (d.thresholds && d.thresholds.hot) || 35;
+    const a = document.getElementById("heroMild"); if (a) a.textContent = "≥" + mild + "℃";
+    const b = document.getElementById("heroHot"); if (b) b.textContent = "≥" + hot + "℃";
+  } catch (e) {}
+}
+loadPlatform();
+
+async function checkServer() {
+  try {
+    const r = await fetch("/api/tasks");
+    if (r.status === 401) { location.href = "/login"; return; }
+    if (r.ok) {
+      const d1 = document.getElementById("srvDot"); if (d1) d1.classList.add("on");
+      const t1 = document.getElementById("srvText"); if (t1) t1.textContent = "在线";
+      const t2 = document.getElementById("cpSrv"); if (t2) t2.textContent = "● 在线";
+    }
+  } catch(e) {
+    const t1 = document.getElementById("srvText"); if (t1) t1.textContent = "离线";
+    const t2 = document.getElementById("cpSrv"); if (t2) t2.textContent = "○ 离线";
+  }
+}
+setInterval(checkServer, 10000); checkServer();
+
+/* ===== 模型选择 ===== */
+Object.keys(MODEL_META).forEach(function(m){
+  const el = document.createElement("span");
+  el.className = "chip";
+  el.dataset.m = m;
+  el.title = MODEL_META[m];
+  el.innerHTML = "<span class='nm'>" + (MODEL_FULL[m] || m) + "</span><span class='sx'>" + MODEL_META[m] + "</span>";
+  el.onclick = function(){ el.classList.toggle("on"); };
+  document.getElementById("models").appendChild(el);
+});
+
+/* ===== 数据预览 ===== */
+document.getElementById("file").addEventListener("change", async function(e){
+  const f = e.target.files[0];
+  const info = document.getElementById("fileInfo");
+  if (!f) { info.textContent = ""; return; }
+  const isZip = f.name.toLowerCase().endsWith(".zip");
+  info.textContent = isZip
+    ? "已选择 zip 数据包（" + (f.size/1024/1024).toFixed(1) + " MB" + (f.size > 300*1024*1024 ? "，体积较大，打包 Auto/SIF 即可" : "") + "）"
+    : "已选择 " + f.name + "（" + (f.size/1024).toFixed(0) + " KB）";
+  if (!isZip) await preview(f);
+});
+async function preview(file) {
+  const fd = new FormData(); fd.append("file", file);
+  try {
+    const r = await fetch("/api/preview", { method:"POST", body: fd });
+    if (!r.ok) return;
+    const d = await r.json();
+    document.getElementById("previewDesc").textContent = "共 " + d.rows + " 行，" + d.columns.length + " 列：";
+    let head = "<tr>" + d.columns.map(function(c){ return "<th>" + c + "</th>"; }).join("") + "</tr>";
+    (d.preview || []).forEach(function(row){
+      head += "<tr>" + d.columns.map(function(c){ return "<td>" + (row[c] !== undefined ? row[c] : "") + "</td>"; }).join("") + "</tr>";
+    });
+    document.getElementById("previewTable").innerHTML = "<table>" + head + "</table>";
+    showBlock("previewCard", true);
+  } catch(e) {}
+}
+
+/* ===== 导入中心 ===== */
+let lastImpColmap = [];
+const IMP_MAP_OPTIONS = [["", "不映射（保留原名）"], ["date", "日期 date"], ["region", "地区 region"], ["crop", "作物 crop"],
+  ["season", "生长季 season"], ["pool", "样地/池 pool"], ["channel", "通道 channel"], ["tmax", "最高气温 tmax"],
+  ["tmin", "最低气温 tmin"], ["stage", "生育期 stage"], ["yield", "产量 yield"], ["sif_mean", "SIF 信号列 → sif_mean"]];
+function impMapOptions(sel) {
+  let o = "";
+  IMP_MAP_OPTIONS.forEach(function(p){ o += "<option value='" + p[0] + "'" + (p[0] === sel ? " selected" : "") + ">" + p[1] + "</option>"; });
+  return o;
+}
+const KIND_CN = {
+  sif_folder:"SIF 数据文件夹", sif_zip:"SIF 数据包(zip)",
+  weather_table:"气象表", phenology_table:"物候表", yield_table:"产量表",
+  sample_table:"逐样本表格", daily_table:"逐日长表", experiment_excel:"田间试验Excel（产量/生育期）",
+  portable_spectra:"便携光谱仪数据（吸光度/反射率）", soybean_csv:"多通道光谱逐日CSV（光谱大CSV）",
+  universal_table:"通用整理表格",
+  table_other:"通用表格", unknown:"未识别"
+};
+async function importFile() {
+  const file = document.getElementById("impFile").files[0];
+  if (!file) { toast("请先选择数据文件", "err"); return; }
+  const btn = document.getElementById("btnImport");
+  btn.disabled = true;
+  document.getElementById("impHint").textContent = "正在识别并整理…";
+  const fd = new FormData(); fd.append("file", file);
+  try {
+    const r = await fetch("/api/import", { method:"POST", body: fd });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.detail || "识别失败");
+    renderImport(d);
+    document.getElementById("impHint").textContent = "整理完成";
+    loadImportHistory();
+  } catch (e) {
+    document.getElementById("impHint").textContent = "识别失败：" + e.message;
+    toast("识别失败：" + e.message, "err");
+  } finally { btn.disabled = false; }
+}
+function renderImport(d) {
+  const report = document.getElementById("impReport");
+  if (report) report.style.display = "";
+  const kind = KIND_CN[d.kind] || d.kind;
+  document.getElementById("impKind").innerHTML = "<span class='tag'>类型：" + kind + "</span>";
+  document.getElementById("impMsg").innerHTML = d.message || "";
+  const info = d.info || {};
+  let html = "";
+  if (info.columns) html += "<div class='hint'>字段：" + info.columns.join("、") + "</div>";
+  if (info.rows !== undefined) html += "<div class='hint'>行数：" + info.rows + "</div>";
+  if (info.rows_estimate) html += "<div class='hint'>行数(估计)：" + info.rows_estimate + "</div>";
+  if (info.date_folders) html += "<div class='hint'>观测日：" + info.date_folders + " 个</div>";
+  if (info.regions) html += "<div class='hint'>地区：" + info.regions.join("、") + "</div>";
+  if (info.crops) html += "<div class='hint'>作物：" + info.crops.join("、") + "</div>";
+  if (info.sheets) html += "<div class='hint'>工作表：" + info.sheets.join("、") + "</div>";
+  if (info.note) html += "<div class='hint'>" + info.note + "</div>";
+  if (info.mapping_editable && info.colmap && info.colmap.length) {
+    lastImpColmap = info.colmap;
+    html += "<div class='hint' style='margin-top:12px; color:#2563eb'>列映射修正：自动识别不一定完全正确，可手动为每列指定含义后“应用映射”重新整理保存（SIF/数值信号列请选“不映射”）。</div>";
+    html += "<div class='tbl-wrap'><table style='max-width:620px'><thead><tr><th>列</th><th>映射为</th></tr></thead><tbody>";
+    info.colmap.forEach(function(e, i){
+      html += "<tr><td>" + e.col + "</td><td><select data-idx='" + i + "'>" + impMapOptions(e.mapped || "") + "</select></td></tr>";
+    });
+    html += "</tbody></table></div>";
+    html += "<div style='margin-top:8px'><button class='btn sm' onclick='applyImportMapping()'>应用映射并重新整理保存</button> <span class='hint' id='impMapHint'></span></div>";
+  }
+  document.getElementById("impInfo").innerHTML = html;
+  let th = "";
+  const t = d.tables || {};
+  if (t.preview && t.preview.length) {
+    const cols = Object.keys(t.preview[0]);
+    th += "<div class='hint' style='margin-top:8px'>数据预览：</div><div class='tbl-wrap'><table><tr>" + cols.map(c=>"<th>"+c+"</th>").join("") + "</tr>";
+    t.preview.slice(0,6).forEach(row => { th += "<tr>" + cols.map(c=>"<td>"+(row[c]!==undefined?row[c]:"")+"</td>").join("") + "</tr>"; });
+    th += "</table></div>";
+  }
+  if (t.yield_preview && t.yield_preview.length) {
+    const cols = Object.keys(t.yield_preview[0]);
+    th += "<div class='hint' style='margin-top:8px'>整理出的产量表：</div><div class='tbl-wrap'><table><tr>" + cols.map(c=>"<th>"+c+"</th>").join("") + "</tr>";
+    t.yield_preview.forEach(row => { th += "<tr>" + cols.map(c=>"<td>"+(row[c]!==undefined?row[c]:"")+"</td>").join("") + "</tr>"; });
+    th += "</table></div>";
+  }
+  if (t.phenology_preview && t.phenology_preview.length) {
+    const cols = Object.keys(t.phenology_preview[0]);
+    th += "<div class='hint' style='margin-top:8px'>整理出的生育期表：</div><div class='tbl-wrap'><table><tr>" + cols.map(c=>"<th>"+c+"</th>").join("") + "</tr>";
+    t.phenology_preview.forEach(row => { th += "<tr>" + cols.map(c=>"<td>"+(row[c]!==undefined?row[c]:"")+"</td>").join("") + "</tr>"; });
+    th += "</table></div>";
+  }
+  if (t.soybean_channels && t.soybean_channels.length) {
+    const cols = Object.keys(t.soybean_channels[0]);
+    th += "<div class='hint' style='margin-top:8px'>通道统计：</div><div class='tbl-wrap'><table><tr>" + cols.map(c=>"<th>"+c+"</th>").join("") + "</tr>";
+    t.soybean_channels.forEach(row => { th += "<tr>" + cols.map(c=>"<td>"+(row[c]!==undefined?row[c]:"")+"</td>").join("") + "</tr>"; });
+    th += "</table></div>";
+  }
+  document.getElementById("impTables").innerHTML = th;
+  importedRef = d.data_ref || "";
+  importedKind = d.kind || "";
+  if (importedKind === "weather_table") importedWeather = true;
+  const canStress = !!(importedRef && STRESS_KINDS[importedKind]);
+  const canYield = !!(importedRef && YIELD_KINDS[importedKind]) || importedKind === "experiment_excel";
+  const bs = document.getElementById("btnImportStress");
+  const bt = document.getElementById("btnImportTrain");
+  if (bs) { bs.disabled = !canStress; bs.style.display = "inline-flex"; }
+  if (bt) { bt.disabled = !(canYield || importedRef); bt.style.display = "inline-flex"; }
+  refreshImportHints();
+}
+function refreshImportHints() {
+  const kindCn = KIND_CN[importedKind] || importedKind || "";
+  const sh = document.getElementById("stressImportHint");
+  if (sh) {
+    if (importedRef && STRESS_KINDS[importedKind]) {
+      sh.style.display = "";
+      sh.textContent = "将使用刚整理的「" + kindCn + "」做胁迫分析，不必再选文件。" + (importedWeather ? "气象表已写入，会自动匹配。" : "若已导入过气象表会自动使用。");
+    } else if (importedWeather) {
+      sh.style.display = "";
+      sh.textContent = "气象表已整理保存。请再导入逐日信号表，或在本页上传逐日表后分析。";
+    } else {
+      sh.style.display = "none";
+    }
+  }
+  const th = document.getElementById("trainImportHint");
+  if (th) {
+    if (importedRef) {
+      th.style.display = "";
+      th.textContent = "将使用刚整理的数据训练，不必再上传主表。需要气象/物候/产量辅助表时请在「上传数据」页勾选或附上。";
+    } else {
+      th.style.display = "none";
+    }
+  }
+}
+async function applyImportMapping() {
+  const file = document.getElementById("impFile").files[0];
+  if (!file) { toast("请重新选择该文件后再应用映射", "err"); return; }
+  const mapping = {};
+  document.querySelectorAll("#impInfo select[data-idx]").forEach(function(sel){
+    const i = parseInt(sel.getAttribute("data-idx"), 10);
+    const entry = lastImpColmap[i];
+    if (entry) mapping[entry.col] = sel.value;
+  });
+  const fd = new FormData();
+  fd.append("file", file);
+  fd.append("mapping", JSON.stringify(mapping));
+  const hint = document.getElementById("impMapHint");
+  if (hint) hint.textContent = "正在按列映射重新整理…";
+  try {
+    const r = await fetch("/api/import", { method:"POST", body: fd });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.detail || "整理失败");
+    renderImport(d);
+    document.getElementById("impHint").textContent = "已按映射整理完成";
+    toast("列映射已应用并保存", "ok");
+  } catch(e) {
+    const msg = (e.message || "").slice(0, 160);
+    if (hint) hint.textContent = "应用失败：" + msg;
+    toast("应用映射失败", "err");
+  }
+}
+async function loadImportHistory() {
+  const box = document.getElementById("impHistBox");
+  if (!box) return;
+  try {
+    const r = await fetch("/api/import_history?limit=30");
+    if (!r.ok) { box.innerHTML = "<div class='empty'>读取失败</div>"; return; }
+    const list = await r.json();
+    if (!list || !list.length) { box.innerHTML = "<div class='empty'>暂无导入记录</div>"; return; }
+    let h = "<table><thead><tr><th>时间</th><th>类型</th><th>文件</th><th>行数</th><th>操作</th></tr></thead><tbody>";
+    list.forEach(function(it){
+      const kind = KIND_CN[it.kind] || it.kind || "—";
+      h += "<tr><td>" + (it.created_at || "") + "</td><td>" + kind + "</td><td>" + (it.filename || "") + "</td><td>" + (it.rows || 0) + "</td><td>";
+      if (it.data_ref) {
+        h += "<button class='btn ghost sm' style='padding:2px 8px;font-size:12px' onclick=\"useImportedRef('" + it.data_ref.replace(/'/g, "") + "','" + (it.kind || "").replace(/'/g, "") + "','stress')\">胁迫分析</button> ";
+        h += "<button class='btn ghost sm' style='padding:2px 8px;font-size:12px' onclick=\"useImportedRef('" + it.data_ref.replace(/'/g, "") + "','" + (it.kind || "").replace(/'/g, "") + "','yield')\">产量训练</button> ";
+      }
+      h += "<button class='btn ghost sm' style='padding:2px 8px;font-size:12px;color:#dc2626' onclick=\"delImportHistory(" + it.id + ")\">删除</button></td></tr>";
+    });
+    h += "</tbody></table>";
+    box.innerHTML = h;
+  } catch(e) { box.innerHTML = "<div class='empty'>读取失败：" + (e.message || "").slice(0, 80) + "</div>"; }
+}
+async function delImportHistory(id) {
+  if (!confirm("确定删除这条导入记录？其保存的整理表也会被删除。")) return;
+  const r = await fetch("/api/import_history/" + id, { method:"DELETE" });
+  if (r.ok) { toast("已删除", "ok"); loadImportHistory(); } else toast("删除失败", "err");
+}
+async function clearImportHistory() {
+  if (!confirm("确定清空全部导入历史？其中保存的整理表也会被删除。")) return;
+  const r = await fetch("/api/import_history", { method:"DELETE" });
+  const d = await r.json().catch(function(){ return {}; });
+  if (r.ok) { toast("已清空 " + (d.deleted || 0) + " 条", "ok"); loadImportHistory(); } else toast("清空失败", "err");
+}
+function useImportedRef(ref, kind, dest) {
+  importedRef = ref;
+  importedKind = kind || importedKind || "";
+  refreshImportHints();
+  if (dest === "stress") useImportedStress();
+  else useImported();
+}
+async function resetAllFactory() {
+  if (!confirm("确定一键恢复出厂？将清空：训练历史、导入历史、模型文件、报告和临时文件。\n不会删除 data/raw 里的源数据（气象/物候/产量/种植表/SIF包）。")) return;
+  try {
+    const r = await fetch("/api/reset_all", { method:"DELETE" });
+    const d = await r.json().catch(function(){ return {}; });
+    if (!r.ok) throw new Error(d.detail || "失败");
+    toast("已恢复出厂：清空 " + (d.deleted_tasks || 0) + " 条训练记录", "ok");
+    setTimeout(function(){ location.reload(); }, 1200);
+  } catch(e) { toast("恢复出厂失败：" + (e.message || "").slice(0, 120), "err"); }
+}
+function useImported() {
+  if (!importedRef) { toast("没有可用的导入数据", "err"); return; }
+  refreshImportHints();
+  go("train");
+  toast("已载入整理表，点「开始训练」即可", "ok");
+}
+function useImportedStress() {
+  if (!importedRef) { toast("没有可用的导入数据，请先识别整理", "err"); go("import"); return; }
+  refreshImportHints();
+  go("stress");
+  toast("已载入整理表，开始胁迫分析", "ok");
+  runStress();
+}
+
+/* ===== 训练 ===== */
+const STAGES = ["正在解析数据…", "正在提取特征…", "正在训练模型…", "正在交叉验证…", "正在生成结果…"];
+async function train() {
+  const file = document.getElementById("file").files[0];
+  if (!file && !importedRef) { toast("请选择数据文件，或先在「导入」页导入数据", "err"); go("import"); return; }
+  const target = document.getElementById("target").value.trim() || "yield";
+  const models = Array.prototype.map.call(document.querySelectorAll("#models .chip.on"), function(x){ return x.dataset.m; }).join(",");
+  if (!models) { toast("请勾选至少一个估产模型", "err"); return; }
+  const autofs = document.getElementById("autofs").checked ? "true" : "false";
+  const fd = new FormData();
+  if (file) fd.append("file", file);
+  if (!file && importedRef) fd.append("data_ref", importedRef);
+  fd.append("target", target); fd.append("models", models); fd.append("auto_feature_select", autofs); fd.append("autouse_aux", document.getElementById("autouse").checked ? "true" : "false");
+  ["wf","pf","yf"].forEach(function(id){
+    const f = document.getElementById(id).files[0];
+    if (f) fd.append(id === "wf" ? "weather_file" : id === "pf" ? "phenology_file" : "yield_file", f);
+  });
+  const pf = document.getElementById("pfp").files[0];
+  if (pf) fd.append("planting_file", pf);
+  document.getElementById("btnTrain").disabled = true;
+  showBlock("trainProgressCard", true);
+  document.getElementById("progressWrap").classList.add("show");
+  setProgress(5, "提交任务…");
+  document.getElementById("trainResult").style.display = "none";
+  try {
+    const r = await fetch("/api/train", { method:"POST", body: fd });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.detail || "提交失败");
+    document.getElementById("trainDesc").textContent = "任务 " + d.task_id + " 已提交，后台执行中…";
+    pollTask(d.task_id);
+  } catch(e) {
+    toast("提交失败：" + e.message, "err");
+    document.getElementById("progressWrap").classList.remove("show");
+    document.getElementById("trainResult").style.display = "";
+    document.getElementById("btnTrain").disabled = false;
+    syncBlankPages();
+  }
+}
+function setProgress(pct, msg) {
+  document.getElementById("progressFill").style.width = pct + "%";
+  document.getElementById("progressMsg").textContent = msg;
+  document.getElementById("progressPct").textContent = pct + "%";
+}
+function pollTask(taskId) {
+  clearInterval(pollTimer);
+  let stageIdx = 0;
+  const stageTimer = setInterval(function(){
+    stageIdx = (stageIdx + 1) % STAGES.length;
+    const sl = document.getElementById("stageLine"); if (sl) sl.textContent = STAGES[stageIdx];
+  }, 2200);
+  pollTimer = setInterval(async function(){
+    try {
+      const r = await fetch("/api/task/" + taskId);
+      const d = await r.json();
+      const msg = d.message || "";
+      if (msg.indexOf("解析") >= 0) setProgress(25, "解析数据…");
+      else if (msg.indexOf("特征") >= 0) setProgress(55, "特征工程…");
+      else if (msg.indexOf("交叉验证") >= 0) setProgress(80, "多模型交叉验证…");
+      if (d.status === "done") {
+        clearInterval(pollTimer); clearInterval(stageTimer);
+        setProgress(100, "训练完成");
+        lastResult = d.result;
+        showResultSummary(d.result);
+        document.getElementById("btnTrain").disabled = false;
+        toast("训练完成，最优模型：" + (MODEL_FULL[d.best_model] || d.best_model), "ok");
+      } else if (d.status === "failed") {
+        clearInterval(pollTimer); clearInterval(stageTimer);
+        const raw = (d.message || "").trim().split("\n");
+        let tip = raw[raw.length - 1] || "训练失败";
+        tip = tip.replace(/^ValueError:\s*/, "").replace(/^Exception:\s*/, "");
+        setProgress(100, tip.slice(0, 80));
+        document.getElementById("progressFill").style.background = "linear-gradient(90deg,#dc2626,#f87171)";
+        document.getElementById("btnTrain").disabled = false;
+        toast("训练失败：" + tip.slice(0, 180), "err");
+      }
+    } catch(e) {}
+  }, 1500);
+}
+function buildInsight(d) {
+  const b = d.ranking[0], s = d.ranking[1];
+  let t = "本次训练共 " + d.n_samples + " 个样本、" + d.n_features + " 个特征，交叉验证方式：" + ((d.cv && d.cv[d.best_model]) || "LOOCV") + "。";
+  if (b) {
+    t += "模型 " + (MODEL_FULL[b.model] || b.model) + " 综合表现最优：R²=" + b.r2.toFixed(3) + "，RMSE=" + b.rmse.toFixed(1) + " kg/hm²，MAE=" + b.mae.toFixed(1) + " kg/hm²。";
+    if (s && Number.isFinite(s.r2) && Number.isFinite(b.r2)) {
+      const gain = (b.r2 - s.r2) * 100;
+      t += "相比排名第 2 的 " + (MODEL_FULL[s.model] || s.model) + "，R² " + (gain >= 0 ? "提升" : "低") + " " + Math.abs(gain).toFixed(1) + " 个百分点。";
+    }
+  }
+  const fi = d.feature_importance;
+  if (fi) {
+    const top = Object.keys(fi).sort(function(a,b){ return fi[b] - fi[a]; })[0];
+    if (top) t += "对产量影响最大的特征是「" + top + "」。";
+  }
+  return t;
+}
+function showResultSummary(d) {
+  document.getElementById("trainResult").style.display = "block";
+  const b = d.ranking[0];
+  countUp(document.getElementById("trSamples"), d.n_samples || 0, 0);
+  countUp(document.getElementById("trFeat"), d.n_features || 0, 0);
+  document.getElementById("trModel").textContent = MODEL_FULL[d.best_model] || d.best_model;
+  countUp(document.getElementById("trR2"), b && Number.isFinite(b.r2) ? b.r2 : 0, 3);
+  countUp(document.getElementById("trRmse"), b && Number.isFinite(b.rmse) ? b.rmse : 0, 1);
+  document.getElementById("trFeatures").innerHTML = "参与建模特征：" + (d.features || []).map(function(f){ return "<span class='tag'>" + f + "</span>"; }).join("");
+  const warn = document.getElementById("smallWarnTrain");
+  if (warn) warn.textContent = (d.n_samples && d.n_samples <= 10)
+    ? "样本数 " + d.n_samples + " 个，小样本下 R² 可能为负或波动较大。"
+    : "";
+  typeText(document.getElementById("trInsight"), buildInsight(d), 16);
+  sessionTrained = true;
+  modelInfoReady = true;
+  showOverviewResult(d);
+  syncBlankPages();
+}
+
+/* ===== 图表 ===== */
+function getChart(id) {
+  const dom = document.getElementById(id);
+  if (!dom) return null;
+  if (typeof echarts === "undefined") {
+    const w = document.getElementById("offlineWarn"); if (w) w.style.display = "block";
+    return null;
+  }
+  if (!chartCache[id]) chartCache[id] = echarts.init(dom);
+  return chartCache[id];
+}
+function setChart(id, option) { const c = getChart(id); if (c) c.setOption(option, true); }
+function resizeCharts() { Object.keys(chartCache).forEach(function(k){ try { chartCache[k].resize(); } catch(e){} }); }
+window.addEventListener("resize", resizeCharts);
+function radarOption(ranking) {
+  const metrics = ["r2","rmse","mae","rrmse","mape"];
+  const lower = { r2:false, rmse:true, mae:true, rrmse:true, mape:true };
+  const dims = ["R²", "RMSE", "MAE", "RRMSE", "MAPE"];
+  const norm = {};
+  metrics.forEach(function(m){
+    const vals = ranking.map(function(r){ return r[m]; }).filter(Number.isFinite);
+    const mn = Math.min.apply(null, vals), mx = Math.max.apply(null, vals);
+    norm[m] = ranking.map(function(r){
+      if (!Number.isFinite(r[m])) return 0;
+      const v = mx === mn ? 0.5 : (r[m] - mn) / (mx - mn);
+      return lower[m] ? 1 - v : v;
+    });
+  });
+  const series = ranking.map(function(r, i){
+    return { name: MODEL_FULL[r.model] || r.model, value: metrics.map(function(m){ return +norm[m][i].toFixed(3); }) };
+  });
+  return { tooltip:{}, legend:{ bottom:0, textStyle:{color:"#8b96ad"} },
+    radar:{ indicator: dims.map(function(x){ return { name:x, max:1 }; }), radius:"62%" },
+    series:[{ type:"radar", data:series, areaStyle:{opacity:.15}, lineStyle:{width:2} }] };
+}
+function renderHealth(d) {
+  const card = document.getElementById("healthCard");
+  const body = document.getElementById("healthBody");
+  if (!card || !body) return;
+  if (!d) { body.innerHTML = "<div class='empty'>训练完成后显示样本规模与指标解读。</div>"; return; }
+  card.style.display = "";
+  const b = (d.ranking || []).find(function(x){ return x.model === d.best_model; }) || (d.ranking || [])[0] || {};
+  const f2 = function(v, n){ return (v === null || v === undefined || !isFinite(v)) ? "—" : Number(v).toFixed(n); };
+  const n = d.n_samples || 0;
+  const r2 = b.r2;
+  const rrmse = b.rrmse;
+  let r2txt, r2col;
+  if (r2 === null || r2 === undefined || !isFinite(r2)) { r2txt = "无法计算"; r2col = "#6b7280"; }
+  else if (r2 >= 0.7) { r2txt = "拟合较好（能解释大部分产量变化）"; r2col = "#16a34a"; }
+  else if (r2 >= 0.4) { r2txt = "中等拟合"; r2col = "#d97706"; }
+  else if (r2 >= 0) { r2txt = "拟合较弱（数据噪声或特征不足）"; r2col = "#d97706"; }
+  else { r2txt = "为负，常见于小样本或特征不足"; r2col = "#dc2626"; }
+  let rrmseTxt = "—";
+  if (rrmse !== null && rrmse !== undefined && isFinite(rrmse)) {
+    const p = rrmse * 100;
+    rrmseTxt = p.toFixed(1) + "%" + (p < 10 ? "（很好）" : p < 20 ? "（良好）" : p < 30 ? "（中等）" : "（较差，小样本时仅供参考）");
+  }
+  let warns = [];
+  if (n <= 10) warns.push("样本 " + n + " 个，小样本下 R² 可能不稳定。");
+  if (n <= 3) warns.push("样本过少（≤3），结果仅供参考。");
+  if (r2 !== null && r2 !== undefined && isFinite(r2) && r2 < 0) warns.push("R² < 0：拟合弱于均值基线，检查列映射与产量列。");
+  const rows = [
+    ["样本数", n + " 个"],
+    ["特征数", (d.n_features || 0) + " 个"],
+    ["交叉验证", (b.cv || "—")],
+    ["最优模型", MODEL_FULL[d.best_model] || d.best_model || ""],
+    ["R²", "<span style='color:" + r2col + ";font-weight:700'>" + f2(r2, 3) + "</span> · " + r2txt],
+    ["RRMSE", rrmseTxt],
+  ];
+  let h = "<div class='tbl-wrap'><table style='max-width:720px'><tbody>";
+  rows.forEach(function(rr){ h += "<tr><th style='width:110px;background:#f8fafc;color:#6b7280;text-align:left'>" + rr[0] + "</th><td>" + rr[1] + "</td></tr>"; });
+  h += "</tbody></table></div>";
+  if (warns.length) h += "<div style='margin-top:8px'>" + warns.map(function(w){ return "<div class='hint' style='color:#d97706'>" + w + "</div>"; }).join("") + "</div>";
+  h += "<div class='hint' style='margin-top:6px;color:#6b7280'>R² 越接近 1 越好；RMSE / MAE 越小越好。</div>";
+  body.innerHTML = h;
+}
+function renderCharts() {
+  const d = lastResult;
+  const tbody = document.querySelector("#rankTable tbody");
+  if (!d) {
+    renderHealth(null);
+    if (tbody) tbody.innerHTML = "<tr><td colspan='10' class='empty'>暂无训练结果</td></tr>";
+    return;
+  }
+  renderHealth(d);
+  const warnA = document.getElementById("smallWarnAnalysis");
+  if (warnA) warnA.textContent = (d.n_samples && d.n_samples <= 10)
+    ? "样本数 " + d.n_samples + " 个，小样本下 R² 可能为负或波动较大。"
+    : "";
+  if (tbody) {
+    tbody.innerHTML = "";
+    d.ranking.forEach(function(r){
+      const tr = document.createElement("tr");
+      if (r.model === d.best_model) tr.className = "best";
+      const okScore = r.score !== null && r.score !== undefined && isFinite(Number(r.score));
+      tr.innerHTML = "<td>" + r.rank + "</td><td><b>" + (MODEL_FULL[r.model] || r.model) + "</b>" + (r.model === d.best_model ? "<span class='badge'>推荐</span>" : "") + "</td><td>" + (MODEL_META[r.model] || "") + "</td>" +
+        "<td>" + (Number.isFinite(r.r2) ? r.r2.toFixed(3) : "-") + "</td>" +
+        "<td>" + (Number.isFinite(r.rmse) ? r.rmse.toFixed(1) : "-") + "</td>" +
+        "<td>" + (Number.isFinite(r.mae) ? r.mae.toFixed(1) : "-") + "</td>" +
+        "<td>" + (Number.isFinite(r.rrmse) ? r.rrmse.toFixed(3) : "-") + "</td>" +
+        "<td>" + (Number.isFinite(r.mape) ? r.mape.toFixed(1) : "-") + "</td>" +
+        "<td>" + (okScore ? "<b>" + r.score + "</b>" : "<span class='badge' style='background:#f3f4f6;color:#6b7280'>不可用</span>") + "</td><td>" + (r.cv || "") + "</td>";
+      tbody.appendChild(tr);
+    });
+  }
+  const names = d.ranking.map(function(r){ return MODEL_FULL[r.model] || r.model; });
+  setChart("chartMetrics", { tooltip:{trigger:"axis"}, legend:{data:["R²","RMSE","MAE"], bottom:0, textStyle:{color:"#8b96ad"}}, grid:{left:50,right:20,top:30,bottom:44},
+    xAxis:{type:"category", data:names}, yAxis:{type:"value"},
+    series:[
+      {name:"R²", type:"bar", data:d.ranking.map(function(r){ return +r.r2.toFixed(3); }), itemStyle:{color:"#16a34a"}, animationDuration:800},
+      {name:"RMSE", type:"bar", data:d.ranking.map(function(r){ return +r.rmse.toFixed(1); }), itemStyle:{color:"#dc2626"}, animationDuration:1000},
+      {name:"MAE", type:"bar", data:d.ranking.map(function(r){ return +r.mae.toFixed(1); }), itemStyle:{color:"#f59e0b"}, animationDuration:1200}
+    ]});
+  if (d.y_pred && d.y_pred[d.best_model]) {
+    const preds = d.y_pred[d.best_model];
+    const pts = d.y_true.map(function(t,i){ return [t, preds[i]]; });
+    const lo = Math.min.apply(null, d.y_true.concat(preds)), hi = Math.max.apply(null, d.y_true.concat(preds));
+    setChart("chartScatter", { tooltip:{formatter:function(p){ return "实际：" + p.value[0].toFixed(1) + "<br>预测：" + p.value[1].toFixed(1) + " kg/hm²"; }}, grid:{left:60,right:20,top:30,bottom:44},
+      xAxis:{name:"实际产量 (kg/hm²)", type:"value", min:lo, max:hi}, yAxis:{name:"预测产量 (kg/hm²)", type:"value", min:lo, max:hi},
+      series:[
+        {type:"line", data:[[lo,lo],[hi,hi]], lineStyle:{type:"dashed", color:"#9ca3af"}, symbol:"none", silent:true, tooltip:{show:false}},
+        {type:"scatter", data:pts, symbolSize:11, itemStyle:{color:"#2563eb"}, animationDuration:900}
+      ]});
+  }
+  if (d.feature_importance) {
+    const items = Object.entries(d.feature_importance).sort(function(a,b){ return a[1] - b[1]; }).slice(-15);
+    setChart("chartImp", { tooltip:{}, grid:{left:140,right:30,top:10,bottom:20}, xAxis:{type:"value", name:"重要性"}, yAxis:{type:"category", data:items.map(function(x){ return x[0]; })},
+      series:[{type:"bar", data:items.map(function(x){ return x[1]; }), itemStyle:{color:"#2563eb"}, animationDuration:1000}]});
+  }
+  setChart("chartRadar", radarOption(d.ranking));
+  if (d.y_pred && d.y_pred[d.best_model] && d.y_pred[d.best_model].length && d.y_true && d.y_true.length) {
+    const p0 = d.y_pred[d.best_model];
+    const res = d.y_true.map(function(t, i){ return [t, +(p0[i] - t).toFixed(3)]; });
+    setChart("chartResid", { tooltip:{ formatter:function(pp){ return "真实：" + pp.value[0] + " kg/hm²<br>残差：" + pp.value[1] + " kg/hm²"; } },
+      grid:{ left:60, right:20, top:20, bottom:44 },
+      xAxis:{ name:"真实产量 (kg/hm²)", type:"value" }, yAxis:{ name:"残差 (kg/hm²)", type:"value" },
+      series:[{ type:"scatter", data:res, symbolSize:10, itemStyle:{ color:"#7c3aed" },
+        markLine:{ silent:true, symbol:"none", lineStyle:{ color:"#9ca3af", type:"dashed" }, data:[{ yAxis:0 }] } }] });
+  }
+  startCarousel();
+  renderCockpitCharts();
+}
+
+/* ===== 分析页图表切换（纯交互：鼠标停在图上/圆点上即切换，不自动跳转） ===== */
+function startCarousel() {
+  const ids = ["cc1","cc2","cc3","cc4"];
+  const dotsBox = document.getElementById("carouselDots");
+  if (!dotsBox) return;
+  dotsBox.innerHTML = "";
+  function focusCard(i) {
+    carouselIdx = i;
+    ids.forEach(function(id, j){
+      const el = document.getElementById(id);
+      if (el) { el.classList.toggle("focus", j === i); el.classList.toggle("dim", j !== i); }
+    });
+    Array.prototype.forEach.call(document.querySelectorAll(".c-dot"), function(dd, j){ dd.classList.toggle("on", j === i); });
+    const fe = document.getElementById(ids[i]);
+    if (fe && fe.scrollIntoView) { try { fe.scrollIntoView({ behavior:"smooth", block:"nearest" }); } catch(e){} }
+    resizeCharts();
+  }
+  ids.forEach(function(id, i){
+    const d = document.createElement("div");
+    d.className = "c-dot" + (i === (carouselIdx % ids.length) ? " on" : "");
+    d.onclick = function(){ focusCard(i); };
+    d.onmouseenter = function(){ focusCard(i); };
+    dotsBox.appendChild(d);
+  });
+  ids.forEach(function(id, i){
+    const el = document.getElementById(id);
+    if (el) el.onmouseenter = function(){ focusCard(i); };
+  });
+  focusCard(carouselIdx % ids.length);
+}
+
+/* ===== 数据看板 ===== */
+const CP_STRESS = { ok: false, d: null };
+function cpTitles() { return CP_STRESS.ok ? CHART_TITLES.concat(["高温日历"]) : CHART_TITLES.slice(); }
+function cpN() { return cpTitles().length; }
+function renderCockpitCharts() {
+  const d = lastResult;
+  if (!d) return;
+  const names = d.ranking.map(function(r){ return MODEL_FULL[r.model] || r.model; });
+  setChart("cpChart0", { tooltip:{trigger:"axis"}, legend:{data:["R²","RMSE","MAE"], bottom:0, textStyle:{color:"#8b96ad"}}, grid:{left:50,right:20,top:30,bottom:44},
+    xAxis:{type:"category", data:names}, yAxis:{type:"value"},
+    series:[
+      {name:"R²", type:"bar", data:d.ranking.map(function(r){ return +r.r2.toFixed(3); }), itemStyle:{color:"#34d399"}},
+      {name:"RMSE", type:"bar", data:d.ranking.map(function(r){ return +r.rmse.toFixed(1); }), itemStyle:{color:"#f87171"}},
+      {name:"MAE", type:"bar", data:d.ranking.map(function(r){ return +r.mae.toFixed(1); }), itemStyle:{color:"#fbbf24"}}
+    ]});
+  const preds = (d.y_pred && d.y_pred[d.best_model]) || [];
+  if (preds.length) {
+    const pts = d.y_true.map(function(t,i){ return [t, preds[i]]; });
+    const lo = Math.min.apply(null, d.y_true.concat(preds)), hi = Math.max.apply(null, d.y_true.concat(preds));
+    setChart("cpChart1", { grid:{left:60,right:20,top:30,bottom:44}, xAxis:{name:"实际 (kg/hm²)", type:"value", min:lo, max:hi}, yAxis:{name:"预测 (kg/hm²)", type:"value", min:lo, max:hi},
+      series:[{type:"line", data:[[lo,lo],[hi,hi]], lineStyle:{type:"dashed", color:"#475569"}, symbol:"none", silent:true}, {type:"scatter", data:pts, symbolSize:11, itemStyle:{color:"#60a5fa"}}]});
+  }
+  if (d.feature_importance) {
+    const items = Object.entries(d.feature_importance).sort(function(a,b){ return a[1] - b[1]; }).slice(-12);
+    setChart("cpChart2", { grid:{left:140,right:30,top:10,bottom:20}, xAxis:{type:"value"}, yAxis:{type:"category", data:items.map(function(x){ return x[0]; })},
+      series:[{type:"bar", data:items.map(function(x){ return x[1]; }), itemStyle:{color:"#a78bfa"}}]});
+  }
+  setChart("cpChart3", radarOption(d.ranking));
+}
+function renderCockpitStress(d) {
+  const cal = (d.temp_calendar || []).slice(0, 400);
+  const el = document.getElementById("cpChart4");
+  if (!el || !cal.length) return;
+  const months = [], seenM = {};
+  cal.forEach(function(r){ if (!seenM[r.m]) { seenM[r.m] = true; months.push(r.m); } });
+  const monthIdx = {}; months.forEach(function(m, i){ monthIdx[m] = i; });
+  const data = cal.map(function(r){
+    const it = { value:[r.d - 1, monthIdx[r.m], r.tmax] };
+    if (r.hot35) it.itemStyle = { borderColor:"#dc2626", borderWidth:1.5 };
+    return it;
+  });
+  const tmaxs = cal.map(function(r){ return r.tmax; });
+  const mn = Math.min.apply(null, tmaxs), mx = Math.max.apply(null, tmaxs);
+  setChart("cpChart4", { tooltip:{ formatter:function(pp){ const m = months[pp.value[1]]; return m + "-" + (pp.value[0] + 1) + "　最高 " + pp.value[2] + "℃"; } },
+    grid:{ left:70, right:20, top:16, bottom:64 },
+    xAxis:{ type:"category", data:Array.from({ length:31 }, function(_, i){ return i + 1; }), name:"日", splitArea:{ show:true } },
+    yAxis:{ type:"category", data:months, splitArea:{ show:true } },
+    visualMap:{ min:Math.floor(mn), max:Math.ceil(mx), calculable:false, orient:"horizontal", left:"center", bottom:8,
+      inRange:{ color:["#dbeafe","#fde68a","#f97316","#b91c1c"] }, textStyle:{ fontSize:10 } },
+    series:[{ type:"heatmap", data:data, label:{ show:false } }] });
+}
+function cpShow(i) {
+  cpCurrent = i;
+  const tts = cpTitles();
+  for (let k = 0; k < tts.length; k++) {
+    const c = document.getElementById("cp-c" + k); if (c) c.classList.toggle("active", k === i);
+    const dots = document.getElementById("cpDots");
+    if (dots && dots.children[k]) dots.children[k].classList.toggle("on", k === i);
+  }
+  const t = document.getElementById("cpChartTitle"); if (t) t.textContent = tts[i] || "";
+  resizeCharts();
+}
+function startCpCycle() {
+  clearInterval(cpCycle);
+  const n = cpN();
+  if (n > 1) cpCycle = setInterval(function(){ cpShow((cpCurrent + 1) % n); }, 4000);
+}
+function pauseCpCycle() { clearInterval(cpCycle); }
+function buildCpDots() {
+  const dots = document.getElementById("cpDots");
+  if (!dots) return;
+  dots.innerHTML = "";
+  cpTitles().forEach(function(t, i){
+    const dd = document.createElement("div");
+    dd.className = "cp-dot" + (i === 0 ? " on" : "");
+    dd.onclick = function(){ cpShow(i); startCpCycle(); };
+    dd.onmouseenter = function(){ cpShow(i); pauseCpCycle(); };
+    dd.onmouseleave = startCpCycle;
+    dots.appendChild(dd);
+  });
+}
+async function loadCockpitStress() {
+  if (!hasStressData() || !lastStress) return;
+  const cal = lastStress.temp_calendar || [];
+  if (!cal.length) return;
+  CP_STRESS.ok = true;
+  CP_STRESS.d = lastStress;
+  renderCockpitStress(lastStress);
+}
+function toggleCockpit(open) {
+  const c = document.getElementById("cockpit");
+  if (!c) return;
+  if (open) {
+    c.classList.add("open");
+    const main = document.querySelector(".cp-main");
+    if (main) { main.onmouseenter = pauseCpCycle; main.onmouseleave = startCpCycle; }
+    renderCockpitCharts();
+    buildCpDots();
+    cpShow(0);
+    updateCockpit();
+    clearInterval(cpTimer);
+    cpTimer = setInterval(updateCockpit, 8000);
+    const tk = document.getElementById("cpTicker"); if (tk) tk.innerHTML = "";
+    pushTicker("看板已启动");
+    try { if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen(); } catch(e) {}
+    loadCockpitStress().then(function(){
+      buildCpDots();
+      const cur = Math.min(cpCurrent || 0, cpN() - 1);
+      cpShow(cur);
+      startCpCycle();
+    });
+  } else {
+    c.classList.remove("open");
+    clearInterval(cpCycle); clearInterval(cpTimer);
+    try { if (document.exitFullscreen) document.exitFullscreen(); } catch(e) {}
+  }
+}
+function pushTicker(msg) {
+  const box = document.getElementById("cpTicker");
+  if (!box) return;
+  const el = document.createElement("div");
+  el.className = "it"; el.textContent = "▸ " + msg;
+  box.appendChild(el);
+  while (box.children.length > 5) box.removeChild(box.firstChild);
+}
+function updateCockpit() {
+  const d = lastResult;
+  if (d) {
+    countUp(document.getElementById("cpSamples"), d.n_samples || 0, 0);
+    countUp(document.getElementById("cpFeat"), d.n_features || 0, 0);
+    document.getElementById("cpModel").textContent = MODEL_FULL[d.best_model] || d.best_model;
+    const b = d.ranking[0];
+    countUp(document.getElementById("cpR2"), b && Number.isFinite(b.r2) ? b.r2 : 0, 3);
+    countUp(document.getElementById("cpRmse"), b && Number.isFinite(b.rmse) ? b.rmse : 0, 1);
+    document.getElementById("cpLastTask").textContent = (MODEL_FULL[d.best_model] || "-") + " · R²=" + (b && Number.isFinite(b.r2) ? b.r2.toFixed(3) : "-");
+  } else {
+    ["cpSamples","cpFeat","cpModel","cpR2","cpRmse"].forEach(function(id){
+      const el = document.getElementById(id); if (el) el.textContent = "—";
+    });
+    const last = document.getElementById("cpLastTask");
+    if (last) last.textContent = "尚未训练";
+  }
+  checkServer();
+  pushTicker(new Date().toLocaleTimeString() + " 状态已更新");
+}
+
+/* ===== 历史 ===== */
+async function loadTasks() {
+  try {
+    const q = new URLSearchParams({ limit: "300" });
+    const st = document.getElementById("fStatus") ? document.getElementById("fStatus").value : "";
+    const fr = document.getElementById("fFrom") ? document.getElementById("fFrom").value : "";
+    const to = document.getElementById("fTo") ? document.getElementById("fTo").value : "";
+    const so = document.getElementById("fSort") ? document.getElementById("fSort").value : "";
+    if (st) q.set("status", st);
+    if (fr) q.set("date_from", fr);
+    if (to) q.set("date_to", to);
+    if (so) q.set("sort", so);
+    const r = await fetch("/api/tasks?" + q.toString());
+    const list = await r.json();
+    const tb = document.querySelector("#taskTable tbody");
+    if (!tb) return;
+    tb.innerHTML = "";
+    if (!list.length) {
+      tb.innerHTML = "<tr><td colspan='10' class='empty'>暂无训练记录</td></tr>";
+      return;
+    }
+    list.forEach(function(t){
+      const m = t.metrics || {};
+      const best = m[t.best_model] || {};
+      const st = t.status === "done" ? "完成" : t.status === "running" ? "进行中" : "失败";
+      const actions = t.status === "done"
+        ? "<button class='btn ghost sm' onclick='viewTask(\"" + t.task_id + "\")'>查看</button> " +
+          "<button class='btn ghost sm' onclick='exportTask(\"" + t.task_id + "\")'>导出</button> " +
+          "<button class='btn ghost sm' style='color:#dc2626' onclick='deleteTask(\"" + t.task_id + "\")'>删除</button>"
+        : "<button class='btn ghost sm' style='color:#dc2626' onclick='deleteTask(\"" + t.task_id + "\")'>删除</button>";
+      tb.innerHTML += "<tr><td>" + t.task_id + "</td><td>" + t.created_at + "</td><td>" + st + "</td><td>" + t.target + "</td><td>" + (t.models || []).join(", ") + "</td><td><b>" + (MODEL_FULL[t.best_model] || t.best_model || "-") + "</b></td><td>" + (best.r2 !== undefined ? Number(best.r2).toFixed(3) : "-") + "</td><td>" + (best.rmse !== undefined ? Number(best.rmse).toFixed(1) : "-") + "</td><td>" + (best.mae !== undefined ? Number(best.mae).toFixed(1) : "-") + "</td><td>" + actions + "</td></tr>";
+    });
+  } catch(e) {}
+}
+/* 历史记录管理 */
+async function viewTask(id) {
+  try {
+    const r = await fetch("/api/task/" + id);
+    const d = await r.json();
+    if (!r.ok || !d.result) { toast("该任务没有可查看的详情", "err"); return; }
+    const res = d.result;
+    const rows = (res.ranking || []).map(function(x){
+      return "<tr><td>" + x.rank + "</td><td><b>" + x.model + "</b></td><td>" + Number(x.r2).toFixed(3) + "</td><td>" + Number(x.rmse).toFixed(1) + "</td><td>" + Number(x.mae).toFixed(1) + "</td><td>" + x.score + "</td></tr>";
+    }).join("");
+    const feats = (res.features || []).map(function(f){ return "<span class='tag'>" + f + "</span>"; }).join("");
+    document.getElementById("taskDetail").innerHTML =
+      "<p class='hint' style='margin-bottom:8px'>任务 " + id + " ｜ " + d.created_at + " ｜ 目标列 " + (res.target || d.target || "-") + " ｜ 样本 " + res.n_samples + " ｜ 特征 " + res.n_features + " ｜ 最优模型 " + (res.best_model || "-") + "</p>" +
+      "<table><thead><tr><th>排名</th><th>模型</th><th>R²</th><th>RMSE</th><th>MAE</th><th>综合分</th></tr></thead><tbody>" + rows + "</tbody></table>" +
+      "<div class='hint' style='margin-top:10px'>参与特征：" + feats + "</div>";
+    document.getElementById("taskModal").style.display = "flex";
+  } catch(e) { toast("查看失败", "err"); }
+}
+function closeTaskModal() { document.getElementById("taskModal").style.display = "none"; }
+document.getElementById("taskModal").addEventListener("click", function(e){ if (e.target.id === "taskModal") closeTaskModal(); });
+function exportTask(id) { window.open("/api/predictions_download?task_id=" + id, "_blank"); }
+async function deleteTask(id) {
+  if (!confirm("确定删除这条训练记录？")) return;
+  const r = await fetch("/api/task/" + id, { method:"DELETE" });
+  if (r.ok) { toast("已删除", "ok"); loadTasks(); } else toast("删除失败", "err");
+}
+async function clearTasks() {
+  if (!confirm("确定清空全部训练记录？此操作不可恢复。")) return;
+  const r = await fetch("/api/tasks", { method:"DELETE" });
+  const d = await r.json();
+  if (r.ok) { toast("已清空 " + (d.deleted || 0) + " 条记录", "ok"); loadTasks(); } else toast("清空失败", "err");
+}
+function exportHistory() {
+  window.open("/api/tasks/export", "_blank");
+  toast("正在导出训练历史 Excel 报告", "ok");
+}
+
+/* ===== 概览 ===== */
+let modelInfoReady = false;
+function resetFreshSession() {
+  lastResult = null;
+  lastStress = null;
+  sessionTrained = false;
+  modelInfoReady = false;
+  importedRef = "";
+  importedKind = "";
+  importedWeather = false;
+  refreshImportHints();
+  resetOverview();
+  const tbody = document.querySelector("#rankTable tbody");
+  if (tbody) tbody.innerHTML = "<tr><td colspan='10' class='empty'>训练完成后显示模型对比</td></tr>";
+  const warnA = document.getElementById("smallWarnAnalysis");
+  if (warnA) warnA.textContent = "";
+  const trI = document.getElementById("trInsight");
+  if (trI) trI.textContent = "尚未训练。上传数据并开始训练后，这里显示最优模型与精度。";
+  ["trModel","trSamples","trFeat","trR2","trRmse"].forEach(function(id){
+    const el = document.getElementById(id); if (el) el.textContent = "—";
+  });
+  ["stHot30","stHot35","stStreak","stLevel","stWarn"].forEach(function(id){
+    const el = document.getElementById(id); if (el) el.textContent = "—";
+  });
+  const pw = document.getElementById("progressWrap");
+  if (pw) pw.classList.remove("show");
+  const tr = document.getElementById("trainResult");
+  if (tr) tr.style.display = "";
+  ["chartMetrics","chartScatter","chartImp","chartRadar","chartResid","stCalChart","stAnomChart","stBoxChart","stCurveChart","stPcChart","stIndChart","cpChart0","cpChart1","cpChart2","cpChart3"].forEach(function(id){
+    const c = chartCache[id];
+    if (c) { try { c.dispose(); } catch(e){} delete chartCache[id]; }
+  });
+  syncBlankPages();
+}
+function resetOverview() {
+  ["ovSamples","ovModel","ovR2","ovRmse","ovHot30","ovHot35","ovLevel","ovWarn"].forEach(function(id){
+    const el = document.getElementById(id); if (el) el.textContent = "—";
+  });
+  const el = document.getElementById("ovInsightText");
+  if (el) el.textContent = "尚未训练产量模型。";
+  const st = document.getElementById("ovStressText");
+  if (st) st.textContent = "尚未运行胁迫分析。请到「胁迫响应」上传逐日信号表。";
+}
+function showOverviewResult(d) {
+  if (!d) return;
+  syncBlankPages();
+  const sEl = document.getElementById("ovSamples");
+  if (sEl) countUp(sEl, d.n_samples || 0, 0);
+  const mEl = document.getElementById("ovModel");
+  if (mEl) mEl.textContent = MODEL_FULL[d.best_model] || d.best_model || "—";
+  const b = (d.ranking || []).find(function(x){ return x.model === d.best_model; }) || (d.ranking || [])[0];
+  countUp(document.getElementById("ovR2"), b && Number.isFinite(b.r2) ? b.r2 : 0, 3);
+  countUp(document.getElementById("ovRmse"), b && Number.isFinite(b.rmse) ? b.rmse : 0, 1);
+  const el = document.getElementById("ovInsightText");
+  if (el) typeText(el, buildInsight(d), 14);
+}
+function showOverviewStress(d) {
+  if (!d || !d.has_stress) return;
+  syncBlankPages();
+  const seasons = d.seasons || [];
+  const hot30 = seasons.reduce(function(a,x){ return a + (x.hot30||0); }, 0);
+  const hot35 = seasons.reduce(function(a,x){ return a + (x.hot35||0); }, 0);
+  const lv = seasons[0] && seasons[0].level_label ? seasons[0].level_label : "—";
+  const warn = d.warn || (seasons[0] && seasons[0].warn) || "—";
+  const e30 = document.getElementById("ovHot30"); if (e30) countUp(e30, hot30, 0);
+  const e35 = document.getElementById("ovHot35"); if (e35) countUp(e35, hot35, 0);
+  const elv = document.getElementById("ovLevel"); if (elv) elv.textContent = lv;
+  const ew = document.getElementById("ovWarn"); if (ew) ew.textContent = warn;
+  const tx = document.getElementById("ovStressText");
+  if (tx) {
+    const n = seasons.length;
+    tx.textContent = "已完成胁迫分析：" + n + " 个生长季。高温日标准 ≥35℃，轻度初筛 ≥30℃。预警：" + warn + "。详细前-中-后响应与敏感指标见「胁迫响应」页。";
+  }
+}
+function refreshOverview() {
+  if (sessionTrained && lastResult) showOverviewResult(lastResult);
+  if (hasStressData()) showOverviewStress({ has_stress:true, seasons:(lastStress && lastStress.seasons) || [], warn:((lastStress && lastStress.seasons) || [])[0] && lastStress.seasons[0].warn });
+  syncBlankPages();
+}
+
+/* ===== 功能自检（演示数据验证软件是否正常） ===== */
+async function selfcheck() {
+  toast("正在运行功能自检：生成演示数据并训练（约十几秒）…");
+  try {
+    const r = await fetch("/api/selfcheck", { method:"POST" });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.detail || "自检失败");
+    lastResult = d;
+    sessionTrained = true;
+    showOverviewResult(d);
+    const b = d.ranking && d.ranking[0];
+    const r2 = b && Number.isFinite(b.r2) ? b.r2 : NaN;
+    if (Number.isFinite(r2) && r2 > 0.5) {
+      toast("功能自检完成，演示数据 R²=" + r2.toFixed(3), "ok");
+    } else {
+      toast("自检完成：R²=" + (Number.isFinite(r2) ? r2.toFixed(3) : "-") + "，请查看结果分析", "ok");
+    }
+    go("analysis");
+  } catch (e) {
+    toast("自检失败：" + (e.message || "").slice(0, 120), "err");
+  }
+}
+
+/* ===== 下载图表 / 分析报告 ===== */
+function downloadChart(id, name) {
+  const c = getChart(id);
+  if (!c) { toast("图表尚未渲染", "err"); return; }
+  const url = c.getDataURL({ type:"png", pixelRatio:2, backgroundColor:"#ffffff" });
+  const a = document.createElement("a");
+  a.href = url; a.download = name + ".png"; a.click();
+  toast("图表已下载：" + name + ".png", "ok");
+}
+async function generateReport() {
+  const btn = document.getElementById("btnReport");
+  const st = document.getElementById("reportStatus");
+  btn.disabled = true;
+  st.textContent = "正在生成报告…";
+  try {
+    const useLlm = document.getElementById("useLlm").checked;
+    const r = await fetch("/api/report_generate", { method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify({ use_llm: useLlm }) });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.detail || "生成失败");
+    document.getElementById("reportBox").style.display = "block";
+    document.getElementById("reportFrame").srcdoc = d.html;
+    st.textContent = d.llm_used ? "报告已生成（外部语言模型）" : "报告已生成（内置撰写）";
+    toast("分析报告已生成", "ok");
+  } catch (e) {
+    st.textContent = "生成失败：" + (e.message || "").slice(0, 200);
+    toast("报告生成失败", "err");
+  } finally { btn.disabled = false; }
+}
+function downloadReport(fmt) {
+  window.open("/api/report_download?format=" + fmt, "_blank");
+}
+function downloadPredictions() {
+  window.open("/api/predictions_download", "_blank");
+}
+
+/* ===== 预测模板下载 ===== */
+async function downloadPredTemplate(fmt, example) {
+  try {
+    const r = await fetch("/api/predict_template?format=" + fmt + (example ? "&example=" + example : ""));
+    if (!r.ok) throw new Error("下载失败");
+    const blob = await r.blob();
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = fmt === "daily" ? "预测输入_逐日表模板.csv" : "预测输入_特征表模板.csv";
+    a.click();
+    toast("预测模板已下载", "ok");
+  } catch(e) { toast("模板下载失败", "err"); }
+}
+
+/* ===== 高温胁迫分析 ===== */
+async function loadLatestStress(overviewOnly) {
+  try {
+    const r = await fetch("/api/stress_dashboard");
+    if (!r.ok) return;
+    const d = await r.json();
+    if (d && d.has_stress) {
+      lastStress = d;
+      showOverviewStress(d);
+      if (!overviewOnly && d.seasons) {
+        /* 看板摘要已够首页；完整结果需重新运行或读 stress_report */
+      }
+    }
+  } catch(e) {}
+}
+async function runStressBuiltin() {
+  const btn = document.getElementById("btnStressBuiltin");
+  const st = document.getElementById("stressStatus");
+  btn.disabled = true;
+  st.textContent = "正在用示例数据做高温匹配与响应分析…";
+  const fd = new FormData();
+  fd.append("source", "sample_daily");
+  try {
+    const r = await fetch("/api/stress_builtin", { method:"POST", body: fd });
+    const d = await r.json();
+    if (!r.ok) throw new Error(typeof d.detail === "string" ? d.detail : "分析失败");
+    lastStress = d;
+    renderStress(d);
+    showOverviewStress({ has_stress:true, seasons:d.seasons||[], warn:(d.warning_seasons&&d.warning_seasons[0]&&d.warning_seasons[0].warn)||((d.seasons||[])[0]||{}).warn });
+    st.textContent = "示例数据胁迫分析完成";
+    toast("胁迫分析完成", "ok");
+  } catch(e) { st.textContent = "分析失败：" + (e.message || "").slice(0, 200); toast("胁迫分析失败", "err"); }
+  finally { btn.disabled = false; }
+}
+async function runStress() {
+  const file = document.getElementById("stressFile").files[0];
+  if (!file && !importedRef) { toast("请先选择逐日信号表，或先在「数据整理」识别", "err"); go("import"); return; }
+  const btn = document.getElementById("btnStress");
+  btn.disabled = true;
+  const st = document.getElementById("stressStatus");
+  st.textContent = "正在分析高温胁迫…（匹配气象、划分相位、训练分类）";
+  const fd = new FormData();
+  if (file) fd.append("file", file);
+  if (!file && importedRef) fd.append("data_ref", importedRef);
+  const wf = document.getElementById("stressWFile").files[0];
+  if (wf) fd.append("weather_file", wf);
+  try {
+    const r = await fetch("/api/stress_analysis", { method:"POST", body: fd });
+    const d = await r.json();
+    if (!r.ok) throw new Error(typeof d.detail === "string" ? d.detail : "分析失败");
+    lastStress = d;
+    renderStress(d);
+    showOverviewStress({ has_stress:true, seasons:d.seasons||[], warn:((d.seasons||[])[0]||{}).warn });
+    st.textContent = "胁迫分析完成";
+  } catch(e) { st.textContent = "分析失败：" + (e.message || "").slice(0, 160); toast("胁迫分析失败", "err"); }
+  finally { btn.disabled = false; }
+}
+function renderStress(d) {
+  document.getElementById("stressResult").style.display = "block";
+  syncBlankPages();
+  if (!d.ok) { toast(d.note || "分析失败", "err"); return; }
+  const seasons = d.seasons || [];
+  const hot30 = seasons.reduce((a,x)=>a+(x.hot30||0),0);
+  const hot35 = seasons.reduce((a,x)=>a+(x.hot35||0),0);
+  const streak = Math.max.apply(null, seasons.map(x=>x.max_streak35||0));
+  const lv = Math.max.apply(null, seasons.map(x=>x.level||0));
+  const lvlTxt = ["","轻度","中度","重度"][lv] || "—";
+  const warnMax = seasons.find(x=>x.warn!=="正常") || seasons[0] || {};
+  document.getElementById("stHot30").textContent = hot30;
+  document.getElementById("stHot35").textContent = hot35;
+  document.getElementById("stStreak").textContent = streak;
+  document.getElementById("stLevel").textContent = lvlTxt;
+  document.getElementById("stWarn").textContent = warnMax.warn || "正常";
+  document.getElementById("stWarn").style.color = (warnMax.warn||"").indexOf("重")>=0 ? "#dc2626" : ((warnMax.warn||"").indexOf("中")>=0 ? "#d97706" : "#16a34a");
+  const pc = d.phase_compare || {};
+  const chart = pc.chart || [];
+  const desc = "高温前(" + ((pc["前"]&&pc["前"].n)||0) + "样本) → 高温中(" + ((pc["中"]&&pc["中"].n)||0) + "样本)，变化 " +
+    (pc.change_pct !== undefined && pc.change_pct !== null ? pc.change_pct.toFixed(1) + "%" : "—") +
+    "，P=" + (pc.p_value_pre_mid !== null && pc.p_value_pre_mid !== undefined ? pc.p_value_pre_mid.toExponential(1) : "—") +
+    "（" + (pc.sig_text || "") + "）。注：需结合生育期与对照解释（单季观测受生长进程影响）。";
+  document.getElementById("stPcDesc").textContent = desc;
+  const groups = (chart.length ? chart : [{group:"全部", 前: pc["前"]&&pc["前"].mean, 中: pc["中"]&&pc["中"].mean, 后: pc["后"]&&pc["后"].mean}]);
+  setChart("stPcChart", { tooltip:{trigger:"axis"}, legend:{bottom:0}, grid:{left:50,right:20,top:20,bottom:40},
+    xAxis:{type:"category", data:groups.map(g=>g.group)}, yAxis:{type:"value", name:"信号均值"},
+    series:[
+      {name:"高温前", type:"bar", data:groups.map(g=>g["前"]), itemStyle:{color:"#60a5fa"}},
+      {name:"高温中", type:"bar", data:groups.map(g=>g["中"]), itemStyle:{color:"#f87171"}},
+      {name:"高温后", type:"bar", data:groups.map(g=>g["后"]), itemStyle:{color:"#34d399"}}
+    ]});
+  const ind = (d.indicators && d.indicators.table) || [];
+  const vipItems = ind.filter(x=>x.vip!==null && x.vip!==undefined).sort((a,b)=>b.vip-a.vip).slice(0,12).reverse();
+  document.getElementById("stIndDesc").textContent = "VIP(变量投影重要性)前" + vipItems.length + "项，越大越敏感；PCA 前3主成分累计解释 " +
+    ((d.indicators && d.indicators.pca && d.indicators.pca.cum && d.indicators.pca.cum.length) ? (d.indicators.pca.cum[d.indicators.pca.cum.length-1]*100).toFixed(0) + "%" : "—");
+  setChart("stIndChart", { tooltip:{}, grid:{left:140,right:30,top:10,bottom:20},
+    xAxis:{type:"value"}, yAxis:{type:"category", data:vipItems.map(x=>x.indicator)},
+    series:[{type:"bar", data:vipItems.map(x=>x.vip), itemStyle:{color:"#7c3aed"}}]});
+  const tc = d.treatment_compare || {};
+  const tRows = (tc.table) || [];
+  const tDescEl = document.getElementById("stTreatDesc");
+  const tTableEl = document.getElementById("stTreatTable");
+  if (tRows.length) {
+    const wv = tc.w50_vs_w100_mid || null;
+    let tds = "各处理组在高温前/中/后三个时段的信号均值（SIF，括号内 n=该组在该时段的天数）。同一天气条件下不同处理的对比，可部分消除生长进程的影响。";
+    if (wv) {
+      const pv = wv.p;
+      const sig = pv === null || pv === undefined ? "" : (pv < 0.05 ? "差异显著(P<0.05)" : (pv < 0.1 ? "边缘显著(P<0.1)" : "差异不显著"));
+      tds += " 水分对比（高温中期）：" + (wv.mean_w50 !== null ? wv.mean_w50.toFixed(4) : "—") + "(n=" + wv.n_w50 + ") vs " + (wv.mean_w100 !== null ? wv.mean_w100.toFixed(4) : "—") + "(n=" + wv.n_w100 + ")，P=" + (pv !== null && pv !== undefined ? (pv < 0.001 ? pv.toExponential(1) : pv.toFixed(3)) : "—") + (sig ? "，" + sig : "") + "。";
+    }
+    tds += " 单季对比需结合物候与对照解释。";
+    tDescEl.textContent = tds;
+    const fmtV = function(v){ return (v === null || v === undefined || isNaN(v)) ? "—" : Number(v).toFixed(4); };
+    let th = "<div class='tbl-wrap'><table><thead><tr><th>处理组</th><th>高温前均值</th><th>n</th><th>高温中均值</th><th>n</th><th>高温后均值</th><th>n</th></tr></thead><tbody>";
+    tRows.forEach(function(r){
+      th += "<tr><td>" + r.group + "</td><td>" + fmtV(r["前"]) + "</td><td>" + (r["前_n"] || 0) + "</td><td>" + fmtV(r["中"]) + "</td><td>" + (r["中_n"] || 0) + "</td><td>" + fmtV(r["后"]) + "</td><td>" + (r["后_n"] || 0) + "</td></tr>";
+    });
+    th += "</tbody></table></div>";
+    tTableEl.innerHTML = th;
+  } else {
+    tDescEl.textContent = "数据中未检测到处理组/水分/处理等分组列，无法进行分组对比（需要 treatment / group / water 列）。";
+    tTableEl.innerHTML = "";
+  }
+  const clf = d.classification || {};
+  const clfEl = document.getElementById("stClf");
+  let html = "";
+  if (!clf.ok) {
+    html = "<div class='empty'>" + (clf.note || "样本不足或等级单一，无法训练胁迫识别模型（需要多生长季/不同胁迫等级样本）") + "</div>";
+  } else {
+    html = "<div class='legend-box'>";
+    (clf.results || []).forEach(r => {
+      html += "<div class='legend-item'><b>" + (MODEL_FULL[r.model] || r.model) + "</b><span>准确率 " + (r.accuracy*100).toFixed(1) + "% ｜ F1 " + (r.f1*100).toFixed(1) + "%</span></div>";
+    });
+    html += "</div><div class='hint' style='margin-top:8px'>样本按“胁迫等级(0无/1轻/2中/3重)”分类；跨作物/跨季分类结果需结合作物差异解释。</div>";
+  }
+  clfEl.innerHTML = html;
+  document.getElementById("stClfDesc").textContent = "分类目标：样本所处季节的热胁迫等级。类别数=" + ((clf.classes||[]).length) + "，样本数=" + (d.n_samples||0) + "。";
+  renderStressDeep(d);
+}
+
+/* ===== 热浪-信号深度图 ===== */
+function fiveNum(a) {
+  a = a.slice().sort(function(x, y){ return x - y; });
+  if (!a.length) return null;
+  function q(p){ const pos = (a.length - 1) * p; const lo = Math.floor(pos), hi = Math.ceil(pos);
+    return a[lo] + (a[hi] - a[lo]) * (pos - lo); }
+  return [a[0], q(0.25), q(0.5), q(0.75), a[a.length - 1]];
+}
+function renderStressDeep(d) {
+  const cColor = ["#2563eb","#7c3aed","#0d9488","#d97706","#dc2626","#16a34a","#db2777","#4f46e5"];
+  const cal = d.temp_calendar || [];
+  const calEl = document.getElementById("stCalChart");
+  if (calEl && cal.length) {
+    const months = [], seenM = {};
+    cal.forEach(function(r){ if (!seenM[r.m]) { seenM[r.m] = true; months.push(r.m); } });
+    const monthIdx = {}; months.forEach(function(m, i){ monthIdx[m] = i; });
+    const data = cal.map(function(r){
+      const it = { value:[r.d - 1, monthIdx[r.m], r.tmax] };
+      if (r.hot35) it.itemStyle = { borderColor:"#dc2626", borderWidth:1.5 };
+      return it;
+    });
+    const tmaxs = cal.map(function(r){ return r.tmax; });
+    const mn = Math.min.apply(null, tmaxs), mx = Math.max.apply(null, tmaxs);
+    setChart("stCalChart", { tooltip:{ formatter:function(pp){ const m = months[pp.value[1]]; return m + "-" + (pp.value[0] + 1) + "　最高气温 " + pp.value[2] + "℃"; } },
+      grid:{ left:70, right:20, top:14, bottom:70 },
+      xAxis:{ type:"category", data:Array.from({ length:31 }, function(_, i){ return i + 1; }), name:"日", splitArea:{ show:true } },
+      yAxis:{ type:"category", data:months, splitArea:{ show:true } },
+      visualMap:{ min:Math.floor(mn), max:Math.ceil(mx), calculable:true, orient:"horizontal", left:"center", bottom:6,
+        inRange:{ color:["#dbeafe","#fde68a","#f97316","#b91c1c"] }, textStyle:{ fontSize:10 } },
+      series:[{ type:"heatmap", data:data, label:{ show:false } }] });
+  } else if (calEl) {
+    calEl.innerHTML = "<div class='empty'>暂无气温日历（需逐日气象表）</div>";
+  }
+  const series = d.signal_series || [];
+  const anomEl = document.getElementById("stAnomChart");
+  if (anomEl && series.length) {
+    const groups = {};
+    series.forEach(function(r){ (groups[r.group] = groups[r.group] || []).push(r); });
+    const union = [], seenD = {};
+    Object.keys(groups).forEach(function(g){ groups[g].forEach(function(r){ if (!seenD[r.date]) { seenD[r.date] = true; union.push(r.date); } }); });
+    union.sort();
+    const lines = [], hotS = [], colors = cColor.slice();
+    Object.keys(groups).forEach(function(g, gi){
+      const rows = groups[g].slice().sort(function(a, b){ return a.date < b.date ? -1 : 1; });
+      const byDate = {}; rows.forEach(function(r){ byDate[r.date] = r; });
+      const vals = rows.map(function(r){ return r.sif; }).filter(function(v){ return v !== null && v !== undefined && isFinite(v); });
+      if (!vals.length) return;
+      vals.sort(function(a, b){ return a - b; });
+      const med = vals[Math.floor(vals.length / 2)];
+      const col = colors[gi % colors.length];
+      lines.push({ name:g, type:"line", smooth:true, showSymbol:false, lineStyle:{ width:2, color:col }, itemStyle:{ color:col },
+        data:union.map(function(dt){ const r = byDate[dt]; return r ? +(r.sif - med).toFixed(4) : null; }) });
+      hotS.push({ name:g + "·≥35℃", type:"scatter", symbolSize:8, itemStyle:{ color:"#dc2626" },
+        data:union.map(function(dt){ const r = byDate[dt]; return (r && r.hot35) ? +(r.sif - med).toFixed(4) : null; }) });
+    });
+    if (lines.length) {
+      setChart("stAnomChart", { tooltip:{ trigger:"axis" }, legend:{ type:"scroll", bottom:0, textStyle:{ fontSize:10 } },
+        grid:{ left:55, right:20, top:20, bottom:44 },
+        xAxis:{ type:"category", data:union, axisLabel:{ rotate:45, fontSize:9 } },
+        yAxis:{ type:"value", name:"SIF 距平" }, series:lines.concat(hotS) });
+    }
+  } else if (anomEl) {
+    anomEl.innerHTML = "<div class='empty'>暂无信号序列</div>";
+  }
+  const box = (d.treatment_compare && d.treatment_compare.box) || null;
+  const boxEl = document.getElementById("stBoxChart");
+  const boxDesc = document.getElementById("stBoxDesc");
+  if (boxEl && box) {
+    const gnames = Object.keys(box);
+    const phases = ["前", "中", "后"];
+    const valid = gnames.filter(function(g){ return phases.every(function(ph){ return (box[g][ph] || []).length >= 2; }); });
+    if (valid.length) {
+      const sArr = [];
+      valid.forEach(function(g, i){
+        const col = cColor[i % cColor.length];
+        sArr.push({ name:g, type:"boxplot", itemStyle:{ color:col, borderColor:col }, data:phases.map(function(ph){ return fiveNum(box[g][ph]); }) });
+      });
+      setChart("stBoxChart", { tooltip:{ trigger:"item" }, legend:{ type:"scroll", bottom:0, textStyle:{ fontSize:10 } },
+        grid:{ left:60, right:20, top:20, bottom:44 },
+        xAxis:{ type:"category", data:["高温前", "高温中", "高温后"] }, yAxis:{ type:"value", name:"SIF" },
+        series:sArr });
+      if (boxDesc) boxDesc.textContent = "展示 " + valid.length + " 个处理组在高温前/中/后 SIF 的分布（下须/四分位/中位/上须）。";
+    } else if (boxDesc) {
+      boxDesc.textContent = "各处理组在三个时段的观测不足（每时段至少需 2 天），暂不绘制箱线。";
+    }
+  }
+  renderStressMech(d);
+}
+function renderStressMech(d) {
+  const body = document.getElementById("stMechBody");
+  if (!body) return;
+  const cal = d.temp_calendar || [];
+  const tmaxBy = {};
+  cal.forEach(function(r){ const dd = String(r.d).padStart(2, "0"); tmaxBy[r.m + "-" + dd] = r.tmax; });
+  const srows = (d.signal_series || []).map(function(r){ return { date:r.date, sif:r.sif, tmax: tmaxBy[r.date] }; });
+  const by = {};
+  srows.forEach(function(r){ if (r.date) (by[r.date] = by[r.date] || []).push(r); });
+  const daily = Object.keys(by).map(function(dt){
+    const arr = by[dt]; let sv = null, tv = null; const ss = [], tt = [];
+    arr.forEach(function(x){ if (x.sif !== null && x.sif !== undefined && isFinite(x.sif)) ss.push(x.sif); if (x.tmax !== null && x.tmax !== undefined && isFinite(x.tmax)) tt.push(x.tmax); });
+    if (ss.length) sv = ss.reduce(function(a,b){ return a+b; }, 0) / ss.length;
+    if (tt.length) tv = tt.reduce(function(a,b){ return a+b; }, 0) / tt.length;
+    return { date:dt, sif:sv, tmax:tv };
+  }).filter(function(r){ return r.sif !== null; });
+  const withT = daily.filter(function(r){ return r.tmax !== null && r.tmax !== undefined && isFinite(r.tmax); });
+  let rTxt = "—";
+  if (withT.length >= 5) {
+    const n = withT.length;
+    const mx = withT.reduce(function(a,b){ return a + b.tmax; }, 0) / n;
+    const my = withT.reduce(function(a,b){ return a + b.sif; }, 0) / n;
+    let sx = 0, sy = 0, sxy = 0;
+    withT.forEach(function(r){ sx += (r.tmax - mx) * (r.tmax - mx); sy += (r.sif - my) * (r.sif - my); sxy += (r.tmax - mx) * (r.sif - my); });
+    if (sx > 0 && sy > 0) rTxt = (sxy / Math.sqrt(sx * sy)).toFixed(3);
+  }
+  let best = null;
+  for (let t = 30; t <= 38.5; t += 0.5) {
+    const hi = withT.filter(function(r){ return r.tmax >= t; }).map(function(r){ return r.sif; });
+    const lo = withT.filter(function(r){ return r.tmax < t; }).map(function(r){ return r.sif; });
+    if (hi.length >= 3 && lo.length >= 3) {
+      const dh = hi.reduce(function(a,b){ return a+b; },0)/hi.length;
+      const dl = lo.reduce(function(a,b){ return a+b; },0)/lo.length;
+      const dff = Math.abs(dh - dl);
+      if (!best || dff > best.diff) best = { t:t, diff:dff, nhi:hi.length, nlo:lo.length };
+    }
+  }
+  const tbl = (d.treatment_compare && d.treatment_compare.table) || [];
+  let gLines = [], worst = null;
+  tbl.forEach(function(g){
+    const pre = g["前"], mid = g["中"], post = g["后"];
+    if (pre === null || pre === undefined || mid === null || mid === undefined) return;
+    const drop = pre !== 0 ? (mid - pre) / Math.abs(pre) * 100 : null;
+    const rec = pre !== 0 ? (post - pre) / Math.abs(pre) * 100 : null;
+    const f = function(v){ return (v === null || v === undefined) ? "—" : v.toFixed(4); };
+    gLines.push("<tr><td>" + g.group + "</td><td>" + f(pre) + "</td><td>" + f(mid) + "</td><td>" + f(post) + "</td><td>" + (drop !== null ? drop.toFixed(1) + "%" : "—") + "</td><td>" + (rec !== null ? rec.toFixed(1) + "%" : "—") + "</td></tr>");
+    if (!worst || (drop !== null && drop < worst.drop)) worst = { group:g.group, drop:drop };
+  });
+  let h = "<div style='margin-top:6px'>SIF 与当日最高气温相关系数 r=" + rTxt + (withT.length ? "（n=" + withT.length + "）" : "") + (best ? "；<b>候选高温阈值≈" + best.t + "℃</b>（≥" + best.t + "℃ 样本 " + best.nhi + "，<" + best.t + "℃ 样本 " + best.nlo + "，信号均值差 " + best.diff.toFixed(4) + "）" : "；气温-信号配对不足，暂不估计阈值") + "。</div>";
+  if (gLines.length) {
+    h += "<div class='tbl-wrap' style='max-width:860px'><table style='font-size:12px'><thead><tr><th>处理组</th><th>高温前均值</th><th>高温中均值</th><th>高温后均值</th><th>高温期变化</th><th>恢复幅度</th></tr></thead><tbody>" + gLines.join("") + "</tbody></table></div>";
+  }
+  if (worst && worst.drop !== null) h += "<div class='hint' style='color:#dc2626'>响应最敏感的处理组：" + worst.group + "（高温期 SIF " + worst.drop.toFixed(1) + "%）</div>";
+  h += "<div class='hint' style='color:#6b7280'>说明：以上为探索性机制指标；阈值/相关需多季重复观测验证，仅作研究线索，不宜直接下因果结论。</div>";
+  const did = d.did_effects || [];
+  if (did.length) {
+    h += "<div style='margin-top:12px'><b style='font-size:13px'>DID 处理效应（高温前→中 变化量的组间差异）</b></div>";
+    h += "<div class='desc'>效应 = (A组中−A组前) − (B组中−B组前)；正=前者高温期降幅更小。组间对照，非严格因果，供机制探讨。</div>";
+    h += "<div class='tbl-wrap' style='max-width:860px'><table style='font-size:12px'><thead><tr><th>因素</th><th>对比组</th><th>前→中(A)</th><th>前→中(B)</th><th>DID效应</th><th>初步解读</th></tr></thead><tbody>";
+    did.forEach(function(r){
+      h += "<tr><td>" + (r.factor === "water" ? "水分" : "肥料") + "</td><td>" + r.a + " vs " + r.b + "</td><td>" + r.a_before + "→" + r.a_mid + "</td><td>" + r.b_before + "→" + r.b_mid + "</td><td><b>" + r.effect + "</b></td><td>" + r.interpret + "</td></tr>";
+    });
+    h += "</tbody></table></div>";
+  }
+  const mech = d.mechanistic_index || [];
+  if (mech.length) {
+    h += "<div style='margin-top:12px'><b style='font-size:13px'>半机理：热胁迫折扣下的光合积累指数（探索）</b></div>";
+    h += "<div class='desc'>按 SIF 面积估算光合积累：≥30℃ 每高 1℃ 效率扣 5%（下限 40%）。adj 为折损后积累；loss 为高温造成的“信号损失”。仅供机制方向参考。</div>";
+    h += "<div class='tbl-wrap' style='max-width:860px'><table style='font-size:12px'><thead><tr><th>分组</th><th>原始积累(面积)</th><th>折扣后积累</th><th>高温信号损失</th><th>≥30℃天数</th></tr></thead><tbody>";
+    mech.forEach(function(r){
+      const f = function(v){ return (v === null || v === undefined) ? "—" : v; };
+      h += "<tr><td>" + r.group + "</td><td>" + f(r.raw_auc) + "</td><td>" + f(r.adj_auc) + "</td><td>" + (r.loss_pct !== null && r.loss_pct !== undefined ? r.loss_pct + "%" : "—") + "</td><td>" + f(r.hot30_days) + "</td></tr>";
+    });
+    h += "</tbody></table></div>";
+  }
+  body.innerHTML = h;
+}
+
+/* ===== 预测 ===== */
+async function loadModelInfo(manual) {
+  const card = document.getElementById("modelInfoCard");
+  const body = document.getElementById("modelInfoBody");
+  if (!card || !body) return;
+  card.style.display = "";
+  if (!modelInfoReady) {
+    body.innerHTML = "<div class='empty'>暂无训练模型</div>";
+    return;
+  }
+  try {
+    const r = await fetch("/api/model_info");
+    if (!r.ok) {
+      body.innerHTML = "<div class='empty'>暂无模型信息</div>";
+      return;
+    }
+    const d = await r.json();
+    if (!d || !d.has_model) {
+      body.innerHTML = "<div class='empty'>暂无训练模型</div>";
+      return;
+    }
+    const cn = MODEL_FULL[d.best_model] || d.best_model;
+    const f2 = function(v, n){ return (v === null || v === undefined || !isFinite(v)) ? "—" : Number(v).toFixed(n); };
+    const r2c = d.r2 === null || d.r2 === undefined || !isFinite(d.r2) ? "—" : (d.r2 >= 0 ? "#16a34a" : "#dc2626");
+    const range = (d.regions && d.regions.length ? d.regions.join("、") : "—") + (d.crops && d.crops.length ? "（" + d.crops.join("、") + "）" : "");
+    let chips = "";
+    (d.features || []).forEach(function(f){ chips += "<span class='tag'>" + f + "</span>"; });
+    if ((d.n_features_total||0) > (d.features||[]).length) chips += "<span class='tag'>…共 " + d.n_features_total + " 个</span>";
+    body.innerHTML =
+      "<div class='kpis' style='margin-bottom:12px'>" +
+        "<div class='kpi'><div class='label'>最优模型</div><div class='value' style='font-size:18px'>" + cn + "</div></div>" +
+        "<div class='kpi g'><div class='label'>R²（留出验证）</div><div class='value' style='color:" + r2c + "'>" + f2(d.r2,3) + "</div></div>" +
+        "<div class='kpi'><div class='label'>RMSE</div><div class='value'>" + f2(d.rmse,1) + "</div><div class='unit'>kg/hm²</div></div>" +
+        "<div class='kpi'><div class='label'>MAE</div><div class='value'>" + f2(d.mae,1) + "</div><div class='unit'>kg/hm²</div></div>" +
+        "<div class='kpi'><div class='label'>样本 / 样地</div><div class='value'>" + (d.n_samples||"—") + " / " + (d.n_pools||"—") + "</div></div>" +
+      "</div>" +
+      "<div class='hint'>训练范围：" + range + (d.seasons && d.seasons.length ? "　季：" + d.seasons.join("、") : "") + "　|　保存时间：" + (d.saved_at || "—") + "</div>" +
+      "<div style='margin-top:8px' class='hint'>参与建模特征：" + (chips || "—") + "</div>" +
+      "<div class='hint' style='margin-top:6px'>预测使用该模型。</div>";
+  } catch(e) {
+    body.innerHTML = "<div class='empty'>模型信息读取失败：" + (e.message || "").slice(0,120) + "</div>";
+  }
+}
+async function predictPreview() {
+  const file = document.getElementById("predFile").files[0];
+  if (!file) { toast("请先选择预测数据文件", "err"); return; }
+  const info = document.getElementById("predInfo");
+  const wrap = document.getElementById("predPreviewWrap");
+  if (info) info.textContent = "正在计算预测…";
+  const fd = new FormData(); fd.append("file", file); fd.append("preview", "1");
+  try {
+    const resp = await fetch("/api/predict", { method:"POST", body: fd });
+    const d = await resp.json().catch(function(){ return {}; });
+    if (!resp.ok) { throw new Error(d.detail || resp.statusText); }
+    if (wrap) wrap.style.display = "block";
+    if (info) {
+      info.textContent = "共 " + d.n + " 行预测，使用模型：" + (MODEL_FULL[d.model] || d.model || "") + (d.cal_note ? "；" + d.cal_note.detail + "（校准后见 yield_calibrated 列）" : "");
+    }
+    const box = document.getElementById("predPreviewTable");
+    const rows = d.rows || [];
+    if (box) {
+      if (!rows.length) { box.innerHTML = "<div class='empty'>没有预测结果</div>"; }
+      else {
+        const keys = Object.keys(rows[0]);
+        let h = "<table><thead><tr>" + keys.map(function(k){ return "<th>" + k + "</th>"; }).join("") + "</tr></thead><tbody>";
+        rows.forEach(function(r){ h += "<tr>" + keys.map(function(k){ return "<td>" + (r[k] === null || r[k] === undefined ? "" : r[k]) + "</td>"; }).join("") + "</tr>"; });
+        h += "</tbody></table>";
+        box.innerHTML = h;
+      }
+    }
+    const btn = document.getElementById("btnPredDownload");
+    if (btn) btn.style.display = "inline-flex";
+    toast("预测完成：" + d.n + " 行", "ok");
+  } catch(e) {
+    if (info) info.textContent = "预测失败：" + (e.message || "").slice(0, 200);
+    toast("预测失败", "err");
+  }
+}
+async function downloadPrediction() {
+  const file = document.getElementById("predFile").files[0];
+  if (!file) { toast("请先选择预测数据文件", "err"); return; }
+  const fd = new FormData(); fd.append("file", file);
+  try {
+    const resp = await fetch("/api/predict", { method:"POST", body: fd });
+    if (!resp.ok) {
+      const d = await resp.json().catch(function(){ return {}; });
+      toast("下载失败：" + (d.detail || resp.statusText).slice(0, 200), "err"); return;
+    }
+    const blob = await resp.blob();
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob); a.download = "yield_prediction.csv"; a.click();
+    toast("已开始下载预测 CSV", "ok");
+  } catch(e) { toast("下载失败：" + (e.message || "").slice(0, 120), "err"); }
+}
+
+function plugStore() {
+  try { return JSON.parse(localStorage.getItem("zct_plugs") || "{}"); } catch (e) { return {}; }
+}
+function plugSave(id, off) {
+  const s = plugStore();
+  s[id] = off ? "off" : "on";
+  try { localStorage.setItem("zct_plugs", JSON.stringify(s)); } catch (e) {}
+}
+function syncPlugBars() {
+  document.querySelectorAll(".plug-bar .plug-chip").forEach(function(chip){
+    const card = document.querySelector('.plug[data-plug="' + chip.dataset.plug + '"]');
+    const on = card && !card.classList.contains("off");
+    chip.classList.toggle("on", !!on);
+    chip.classList.toggle("off", !on);
+  });
+}
+function setPlug(card, off) {
+  if (!card) return;
+  card.classList.toggle("off", !!off);
+  const tog = card.querySelector(".plug-tog");
+  if (tog) tog.textContent = off ? "展开" : "收起";
+  if (card.dataset.plug) plugSave(card.dataset.plug, off);
+  syncPlugBars();
+  if (!off) setTimeout(resizeCharts, 40);
+}
+function initPlugs() {
+  const saved = plugStore();
+  document.querySelectorAll(".plug[data-plug]").forEach(function(card){
+    if (saved[card.dataset.plug] === "off") card.classList.add("off");
+    const tog = card.querySelector(".plug-tog");
+    if (tog) tog.textContent = card.classList.contains("off") ? "展开" : "收起";
+    const head = card.querySelector(".plug-head");
+    function onToggle(ev) {
+      if (ev) {
+        const t = ev.target;
+        if (t && t.closest && t.closest("button") && !t.classList.contains("plug-tog") && !t.closest(".plug-tog")) return;
+        if (t && (t.tagName === "A" || t.tagName === "INPUT")) return;
+        ev.preventDefault();
+      }
+      setPlug(card, !card.classList.contains("off"));
+    }
+    if (tog) tog.addEventListener("click", function(e){ e.stopPropagation(); onToggle(e); });
+    if (head) head.addEventListener("click", onToggle);
+  });
+  document.querySelectorAll(".plug-bar .plug-chip").forEach(function(chip){
+    chip.addEventListener("click", function(){
+      const card = document.querySelector('.plug[data-plug="' + chip.dataset.plug + '"]');
+      if (!card) return;
+      setPlug(card, !card.classList.contains("off"));
+    });
+  });
+  syncPlugBars();
+}
+initPlugs();
+checkServer();
+resetFreshSession();
+</script>
+</body>
+</html>
